@@ -1,0 +1,20 @@
+// Agent types and core utilities
+export * from "./types"
+export * from "./agent-builder"
+export * from "./builtin-agents"
+export * from "./custom-agent-factory"
+export * from "./model-resolution"
+export * from "./dynamic-prompt-builder"
+export * from "./prompt-utils"
+export * from "./prompt-loader"
+
+// Agent factories
+export { createLeadAgent, createLeadAgentWithOptions, LEAD_DEFAULTS } from "./tech-lead/index"
+export { createExecutorAgent, createExecutorAgentWithOptions, EXECUTOR_DEFAULTS } from "./lead-dev/index"
+export { createEngineerAgent, ENGINEER_DEFAULTS } from "./engineer/index"
+export { createArchitectAgent, ARCHITECT_DEFAULTS } from "./architect/index"
+export { createCodeAnalystAgent, CODE_ANALYST_DEFAULTS } from "./code-analyst/index"
+export { createResearcherAgent, RESEARCHER_DEFAULTS } from "./researcher/index"
+export { createReviewerAgent, REVIEWER_DEFAULTS } from "./reviewer/index"
+export { createTesterAgent, TESTER_DEFAULTS } from "./tester/index"
+export { createGuardianAgent, GUARDIAN_DEFAULTS } from "./guardian/index"

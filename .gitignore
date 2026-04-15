@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.lucmind/state.json
+.lucmind/workflows/
+bun.lockb
+.idea/

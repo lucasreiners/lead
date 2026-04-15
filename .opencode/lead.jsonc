@@ -1,0 +1,62 @@
+{
+  // L.E.A.D. — Lucas Engineering Automation & Delivery
+  // Project-level configuration.
+  //
+  // This file was auto-generated on first run.
+  // Edit freely — L.E.A.D. will never overwrite an existing config.
+  //
+  // Docs: see README.md in the plugin repo for all options.
+  //
+  // Strategic model chain (tech-lead, architect, lead-dev):
+  //     - anthropic/claude-opus-4
+  //     - copilot/claude-opus-4
+  //     - anthropic/claude-sonnet-4
+  //     - copilot/claude-sonnet-4
+  //     - anthropic/claude-sonnet-4-5
+  //     - claude-3-5-sonnet-latest
+  //     - copilot/gpt-4o
+  //     - gpt-4o
+  //
+  // Engineering model chain (engineer, code-analyst, researcher, reviewer, guardian):
+  //     - anthropic/claude-sonnet-4
+  //     - copilot/claude-sonnet-4
+  //     - anthropic/claude-sonnet-4-5
+  //     - copilot/claude-sonnet-4-5
+  //     - claude-3-5-sonnet-latest
+  //     - copilot/gpt-4o
+  //     - gpt-4o
+
+  // -------------------------------------------------------------------------
+  // Agent model overrides
+  // -------------------------------------------------------------------------
+  // Strategic agents (tech-lead, architect, lead-dev) default to Opus.
+  // Engineering agents (engineer, code-analyst, etc.) default to Sonnet.
+  // Uncomment and change to override per-agent:
+  "agents": {
+    // "tech-lead":     { "model": "anthropic/claude-opus-4" },
+    // "architect":     { "model": "anthropic/claude-opus-4" },
+    // "lead-dev":      { "model": "anthropic/claude-opus-4" },
+    // "engineer":      { "model": "anthropic/claude-sonnet-4" },
+    // "code-analyst":  { "model": "anthropic/claude-sonnet-4" },
+    // "researcher":    { "model": "anthropic/claude-sonnet-4" },
+    // "reviewer":      { "model": "anthropic/claude-sonnet-4" },
+    // "guardian":       { "model": "anthropic/claude-sonnet-4" }
+  }
+
+  // -------------------------------------------------------------------------
+  // Disabled agents / hooks
+  // -------------------------------------------------------------------------
+  // "disabled_agents": [],
+  // "disabled_hooks": [],
+
+  // -------------------------------------------------------------------------
+  // Custom agents
+  // -------------------------------------------------------------------------
+  // "custom_agents": {
+  //   "my-agent": {
+  //     "model": "anthropic/claude-sonnet-4",
+  //     "prompt": "You are a specialized agent for...",
+  //     "mode": "subagent"
+  //   }
+  // }
+}
