@@ -15,6 +15,18 @@ specialists** — from planning and research through implementation, testing, an
 
 2. **Restart OpenCode** — the plugin installs automatically from npm.
 
+3. **Add to your project's `.gitignore`**:
+
+   ```gitignore
+   # L.E.A.D. — local state and ad-hoc plans (not for version control)
+   .lead/state.json
+   .lead/_adhoc/
+   ```
+
+   **Why**: `state.json` is per-developer local state (active plan, session ID, pause status) — sharing it across developers would cause conflicts. Ad-hoc plans are personal scratch work.
+
+   Ticket-linked plans (`.lead/PROJ-123/plan.md`) **should** be committed — they are part of the feature, useful in PRs, and provide implementation traceability.
+
 ## The Big Picture
 
 Instead of one AI agent, L.E.A.D. gives you a **team of 9 specialist agents** that work together — like a real
