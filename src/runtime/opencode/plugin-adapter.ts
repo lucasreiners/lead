@@ -9,6 +9,7 @@ import { checkCompactionRecovery } from "../../hooks/compaction-recovery"
 import { buildTodoPreservationPrompt } from "../../hooks/compaction-todo-preserver"
 import { markSessionCreated } from "../../hooks/first-message-variant"
 import { captureToDoWrite } from "../../hooks/todo-writer"
+import { capturePlanWrite } from "../../hooks/plan-capture"
 import { info, debug } from "../../shared/log"
 
 /**
@@ -161,11 +162,21 @@ export function createPluginAdapter(args: PluginAdapterArgs): Hooks {
     },
 
     /**
-     * Tool execute after — verification reminder, token tracking.
+     * Tool execute after — verification reminder, token tracking, plan capture.
      */
     "tool.execute.after": async (input, _output) => {
-      const { tool, sessionID } = input
+      const { tool, sessionID, args } = input
       debug("plugin", `tool.execute.after: ${tool}`)
+
+      // Capture plan writes from architect agent
+      const activeAgent = sessionAgentMap.get(sessionID)
+      capturePlanWrite({
+        toolName: tool,
+        args: args as Record<string, unknown>,
+        agentName: activeAgent,
+        sessionId: sessionID,
+        directory,
+      })
 
       // Build verification reminder (fire-and-forget, non-blocking)
       const reminder = hooks.buildVerificationReminder({

@@ -116,12 +116,21 @@ export async function handleStartImplementation(options: StartImplementationOpti
   const trimmedArgs = args.trim()
 
   if (!trimmedArgs) {
-    // No plan specified — check for active plan
+    // No plan specified — check for active or paused plan
     const existingState = readWorkState(directory)
     if (existingState && !existingState.paused) {
       const progress = getPlanProgress(existingState.active_plan)
       return {
         prompt: buildContinuationPrompt(existingState, progress),
+      }
+    }
+    if (existingState && existingState.paused) {
+      // Resume the paused plan
+      const resumedState = { ...existingState, paused: false }
+      writeWorkState(directory, resumedState)
+      const progress = getPlanProgress(existingState.active_plan)
+      return {
+        prompt: buildStartPrompt(resumedState, progress, ""),
       }
     }
     return {
@@ -151,17 +160,29 @@ export async function handleStartImplementation(options: StartImplementationOpti
   const titleMatch = planContent.match(/^#\s+(.+)$/m)
   const planName = titleMatch?.[1]?.trim() ?? trimmedArgs
 
-  // Create or update work state
-  const workState: WorkState = {
-    active_plan: planPath,
-    started_at: new Date().toISOString(),
-    session_ids: [sessionId],
-    plan_name: planName,
-    start_sha: startSha,
-    paused: false,
-    continuation_completed_snapshot: 0,
-    stale_continuation_count: 0,
-  }
+  // Reuse existing state if already captured during plan creation (paused=true for this plan)
+  const existingState = readWorkState(directory)
+  const reuseExisting = existingState?.paused && existingState.active_plan === planPath
+
+  const workState: WorkState = reuseExisting
+    ? {
+        ...existingState!,
+        paused: false,
+        start_sha: startSha ?? existingState!.start_sha,
+        session_ids: existingState!.session_ids.includes(sessionId)
+          ? existingState!.session_ids
+          : [...existingState!.session_ids, sessionId],
+      }
+    : {
+        active_plan: planPath,
+        started_at: new Date().toISOString(),
+        session_ids: [sessionId],
+        plan_name: planName,
+        start_sha: startSha,
+        paused: false,
+        continuation_completed_snapshot: 0,
+        stale_continuation_count: 0,
+      }
 
   writeWorkState(directory, workState)
 
