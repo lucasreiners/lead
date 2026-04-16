@@ -32,6 +32,7 @@ export class ConfigHandler {
     default_agent?: string
     permission?: Record<string, unknown> | string
     plugin?: Array<string | [string, { [key: string]: unknown }]>
+    command?: Record<string, { template: string; description?: string; agent?: string; model?: string; subtask?: boolean }>
   }): void {
     const existing = config.agent ?? {}
 
@@ -86,6 +87,20 @@ export class ConfigHandler {
       if (!alreadyPresent) {
         config.plugin.push(dcpPlugin)
       }
+    }
+    // Register L.E.A.D. slash commands
+    const leadDevDisplayName = getAgentDisplayName("lead-dev")
+    config.command = {
+      ...(config.command ?? {}),
+      implement: {
+        description: "Execute a plan using the Lead Developer agent. Usage: /implement <ticket-or-plan-name>",
+        agent: leadDevDisplayName,
+        template: "Execute the L.E.A.D. plan specified in $ARGUMENTS",
+      },
+      "run-workflow": {
+        description: "Run a L.E.A.D. workflow by name. Usage: /run-workflow <workflow-name>",
+        template: "Run the L.E.A.D. workflow: $ARGUMENTS",
+      },
     }
   }
 
