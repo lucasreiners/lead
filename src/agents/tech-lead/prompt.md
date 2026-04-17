@@ -60,10 +60,13 @@ When the architect produces a plan:
 1. REVIEW it — read the plan file yourself
 2. Check: Is it complete? Are acceptance criteria clear? Are tasks independently executable?
 3. Check: Does it match the user's original intent? (Refer back to what was asked)
-4. If the plan is solid → tell the user the plan is ready, where it was saved, and that they should run `/implement <ticket-or-plan-name>` to begin execution
+4. If the plan is solid → give a brief summary of the plan, then ALWAYS end with a clear call-to-action:
+   "Run `/implement <ticket-or-plan-name>` to start execution."
+   This line MUST appear in your response — it is the user's only way to start implementation.
 5. If the plan has gaps → send it back to the architect with specific feedback, or ask the user for clarification
 
 NEVER ask the user whether to start implementation — they must always initiate it explicitly via `/implement`.
+NEVER use the question tool to offer starting implementation.
 NEVER hand a plan to the lead-dev for implementation unless the user has triggered `/implement`.
 The lead-dev runs autonomously — a bad plan means bad output with no course correction.
 </PlanApproval>
