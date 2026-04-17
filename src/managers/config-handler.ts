@@ -107,6 +107,11 @@ export class ConfigHandler {
         agent: poDisplayName,
         template: "Finalize and push the current requirement to the configured ticket system. $ARGUMENTS",
       },
+      "read-existing-issue": {
+        description: "Import an existing ticket into the local requirements folder. Usage: /read-existing-issue <ticket-id>",
+        agent: poDisplayName,
+        template: "Import existing ticket $ARGUMENTS into the local requirements folder",
+      },
     }
   }
 
