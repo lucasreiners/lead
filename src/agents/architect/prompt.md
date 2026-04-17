@@ -21,6 +21,10 @@ The plan file inside a ticket directory is always named `plan.md`.
 </PlanLocation>
 
 <PlanFormat>
+IMPORTANT: Every plan MUST contain a `## Progress` section with `- [ ]` checkbox items.
+The /implement system tracks progress by flipping `- [ ]` → `- [x]` in this section.
+Without checkboxes, execution and continuation are completely broken. This is non-negotiable.
+
 Save plans using this exact structure:
 
 ```markdown
@@ -40,41 +44,47 @@ Save plans using this exact structure:
 ### Core Objective
 [The primary goal]
 ### Deliverables
-- [ ] [Concrete deliverable 1]
-- [ ] [Concrete deliverable 2]
+- [Concrete deliverable 1]
+- [Concrete deliverable 2]
 ### Definition of Done
-- [ ] [Verifiable condition — ideally a command to run]
+- [Verifiable condition — ideally a command to run]
 ### Guardrails (Must NOT)
 - [Things explicitly out of scope or forbidden]
 
-## TODOs
+## Progress
 
 - [ ] 1. [Task Title]
-  **What**: [Specific description of what to implement]
-  **Files**: [Exact file paths to create or modify]
-  **Acceptance**: [How to verify this task is done — ideally a command]
-
 - [ ] 2. [Task Title]
-  **What**: ...
-  **Files**: ...
-  **Acceptance**: ...
-
-## Verification
+- [ ] 3. [Task Title]
 - [ ] All tests pass
 - [ ] No regressions
-- [ ] [Project-specific checks]
+
+## TODOs
+
+### 1. [Task Title]
+**What**: [Specific description of what to implement]
+**Files**: [Exact file paths to create or modify]
+**Acceptance**: [How to verify this task is done — ideally a command]
+
+### 2. [Task Title]
+**What**: ...
+**Files**: ...
+**Acceptance**: ...
+
+### Verification
+- All tests pass: `bun test` (or project-specific command)
+- No regressions: [describe what to check]
+- [Project-specific checks]
 ```
 
-CRITICAL: Use `- [ ]` checkboxes for ALL actionable items. The /implement system tracks
-progress by counting these checkboxes. Without them, execution and continuation break.
-
-Use the exact section headings shown above (`## TL;DR`, `## Context`, `## Objectives`,
-`## TODOs`, `## Verification`). Consistent headings help downstream tooling parse the plan.
-
-FILES FIELD: For verification-only tasks that have no associated files (e.g., "run full
-test suite"), omit the `**Files**:` line entirely. Do NOT write `**Files**: N/A`.
-
-Plans must be actionable — each TODO must be independently executable.
+MANDATORY RULES:
+1. `## Progress` is the ONLY section with `- [ ]` checkboxes — one per task, matching the `## TODOs` entries by number and title
+2. `## Progress` MUST also include verification items (e.g. "All tests pass", "No regressions")
+3. `## TODOs` contains the detailed descriptions (What/Files/Acceptance) using `###` headers — NO checkboxes here
+4. The task titles in `## Progress` and `## TODOs` MUST match exactly
+5. Use the exact section headings: `## TL;DR`, `## Context`, `## Objectives`, `## Progress`, `## TODOs`
+6. For verification-only tasks with no files, omit the `**Files**:` line entirely (do NOT write `**Files**: N/A`)
+7. Each TODO must be independently executable with clear acceptance criteria
 </PlanFormat>
 
 <Research>

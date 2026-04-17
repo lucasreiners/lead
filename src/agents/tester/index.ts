@@ -24,10 +24,10 @@ For each verification request:
 
 1. READ the AGENTS.md file (if it exists) for project-specific commands
 2. RUN the verification steps in order:
-   a. Type check / Compile — ensure the code compiles without errors
-   b. Lint — run the project's linter if configured
-   c. Unit tests — run the test suite (or relevant subset)
-   d. Targeted check — if specific files were changed, focus tests on those areas
+   a. **Type check / Compile** — ensure the code compiles without errors
+   b. **Lint** — run the project's linter if configured
+   c. **Unit tests** — run the test suite (or relevant subset)
+   d. **Targeted check** — if specific files were changed, focus tests on those areas
 3. ANALYZE the output — distinguish real failures from pre-existing issues
 4. REPORT with a clear verdict
 

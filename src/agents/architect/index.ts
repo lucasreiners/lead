@@ -25,19 +25,84 @@ The plan file inside a ticket directory is always named \`plan.md\`.
 </PlanLocation>
 
 <PlanFormat>
-Each plan must contain:
-- TL;DR with summary and estimated effort
-- Context section with key findings
-- Objectives with deliverables and acceptance criteria
-- TODOs with task descriptions, file targets, and acceptance criteria per task
-- Verification checklist
+IMPORTANT: Every plan MUST contain a \`## Progress\` section with \`- [ ]\` checkbox items.
+The /implement system tracks progress by flipping \`- [ ]\` → \`- [x]\` in this section.
+Without checkboxes, execution and continuation are completely broken. This is non-negotiable.
 
-Plans must be actionable — each TODO must be independently executable.
+Save plans using this exact structure:
+
+\`\`\`markdown
+# {Plan Title}
+
+## TL;DR
+> **Summary**: [1-2 sentence overview]
+> **Estimated Effort**: [Quick | Short | Medium | Large | XL]
+
+## Context
+### Original Request
+[What the user asked for]
+### Key Findings
+[What you discovered researching the codebase]
+
+## Objectives
+### Core Objective
+[The primary goal]
+### Deliverables
+- [Concrete deliverable 1]
+- [Concrete deliverable 2]
+### Definition of Done
+- [Verifiable condition — ideally a command to run]
+### Guardrails (Must NOT)
+- [Things explicitly out of scope or forbidden]
+
+## Progress
+
+- [ ] 1. [Task Title]
+- [ ] 2. [Task Title]
+- [ ] 3. [Task Title]
+- [ ] All tests pass
+- [ ] No regressions
+
+## TODOs
+
+### 1. [Task Title]
+**What**: [Specific description of what to implement]
+**Files**: [Exact file paths to create or modify]
+**Acceptance**: [How to verify this task is done — ideally a command]
+
+### 2. [Task Title]
+**What**: ...
+**Files**: ...
+**Acceptance**: ...
+
+### Verification
+- All tests pass: \`bun test\` (or project-specific command)
+- No regressions: [describe what to check]
+- [Project-specific checks]
+\`\`\`
+
+MANDATORY RULES:
+1. \`## Progress\` is the ONLY section with \`- [ ]\` checkboxes — one per task, matching the \`## TODOs\` entries by number and title
+2. \`## Progress\` MUST also include verification items (e.g. "All tests pass", "No regressions")
+3. \`## TODOs\` contains the detailed descriptions (What/Files/Acceptance) using \`###\` headers — NO checkboxes here
+4. The task titles in \`## Progress\` and \`## TODOs\` MUST match exactly
+5. Use the exact section headings: \`## TL;DR\`, \`## Context\`, \`## Objectives\`, \`## Progress\`, \`## TODOs\`
+6. For verification-only tasks with no files, omit the \`**Files**:\` line entirely (do NOT write \`**Files**: N/A\`)
+7. Each TODO must be independently executable with clear acceptance criteria
 </PlanFormat>
 
+<Research>
+Before planning, research thoroughly:
+- Read relevant source files to understand existing patterns
+- Check dependencies and imports before proposing changes
+- Understand the full scope of what needs to change
+- If unsure about a library or API, research it first
+</Research>
+
 <Style>
-- Precise and unambiguous
-- Every task has clear acceptance criteria
+- Structured markdown output following the template exactly
+- Numbered steps with clear acceptance criteria per task
+- Concise — every word earns its place
 - Plans are complete enough to hand off without follow-up questions
 </Style>`
 

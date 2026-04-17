@@ -207,21 +207,24 @@ function buildStartPrompt(
 
 ## Step 1 — Seed your sidebar todos
 
-Before writing any code, use the **TodoWrite tool** to load ALL remaining plan tasks as todos.
-Each \`- [ ]\` task in the plan must become one todo item with status \`pending\`.
-Each \`- [x]\` task must become one todo item with status \`completed\`.
+Before writing any code, use the **TodoWrite tool** to load ALL items from the plan's \`## Progress\` section as todos.
+Each \`- [ ]\` item in \`## Progress\` must become one todo with status \`pending\`.
+Each \`- [x]\` item must become one todo with status \`completed\`.
 ${todoSeedBlock}
 This is non-negotiable. The todo list IS your execution tracker. Without it, continuation is blind.
 
 ## Step 2 — Execute
 
+The plan has two sections: \`## Progress\` (checklist to update) and \`## TODOs\` (detailed descriptions to read).
+
 Work through tasks top-to-bottom:
 1. Set the current task todo to \`in_progress\`
-2. Execute the task (write code, run commands, create files)
-3. Delegate to the **tester** agent for verification
-4. On [PASS]: mark \`- [ ]\` → \`- [x]\` in the plan file AND set todo to \`completed\`
-5. On [FAIL]: fix, re-test, repeat (max 3 cycles)
-6. Move to next task
+2. Read the matching \`## TODOs\` entry for What/Files/Acceptance details
+3. Execute the task (write code, run commands, create files)
+4. Delegate to the **tester** agent for verification
+5. On [PASS]: mark \`- [ ]\` → \`- [x]\` in \`## Progress\` AND set todo to \`completed\`
+6. On [FAIL]: fix, re-test, repeat (max 3 cycles)
+7. Move to next task
 
 Do not stop until all tasks are complete or you are explicitly blocked.`
 }
@@ -266,16 +269,17 @@ function buildContinuationPrompt(
 
 ## Step 1 — Re-sync your sidebar todos
 
-Read the plan file at \`${state.active_plan}\` and use **TodoWrite** to rebuild the full todo list:
-- Every \`- [ ]\` task → \`pending\`
-- Every \`- [x]\` task → \`completed\`
+Read the plan file at \`${state.active_plan}\` and use **TodoWrite** to rebuild the full todo list from the \`## Progress\` section:
+- Every \`- [ ]\` item → \`pending\`
+- Every \`- [x]\` item → \`completed\`
 
-This re-sync is mandatory before continuing — it is the only reliable source of truth after a session break.
+This re-sync is mandatory before continuing — \`## Progress\` is the only reliable source of truth after a session break.
 
 ## Step 2 — Continue execution
 
-Find the first \`pending\` todo (first unchecked \`- [ ]\` in the plan), set it to \`in_progress\`, and execute it.
-Follow the same loop: implement → tester [PASS] → mark \`- [x]\` in plan + \`completed\` in todos → next task.
+Find the first \`pending\` todo (first unchecked \`- [ ]\` in \`## Progress\`), set it to \`in_progress\`, and execute it.
+Read the matching \`## TODOs\` entry for detailed What/Files/Acceptance context.
+Follow the same loop: implement → tester [PASS] → mark \`- [x]\` in \`## Progress\` + \`completed\` in todos → next task.
 
 Do not stop until all tasks are complete or you are explicitly blocked.`
 }
