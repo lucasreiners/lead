@@ -9,6 +9,8 @@ const jsoncParserEsm: import("bun").BunPlugin = {
   },
 }
 
+const pkg = await Bun.file("./package.json").json()
+
 const result = await Bun.build({
   entrypoints: ["./src/index.ts"],
   outdir: "./dist",
@@ -16,6 +18,9 @@ const result = await Bun.build({
   format: "esm",
   external: ["@opencode-ai/plugin", "@opencode-ai/sdk", "zod", "picocolors"],
   plugins: [jsoncParserEsm],
+  define: {
+    __LEAD_VERSION__: JSON.stringify(pkg.version),
+  },
   minify: false,
 })
 
