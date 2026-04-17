@@ -28,6 +28,7 @@ const LeadPlugin: Plugin = async (ctx) => {
 
   // 3. Inject version into Tech Lead display name
   updateBuiltinDisplayName("tech-lead", `Tech Lead · ${LEAD_VERSION}`)
+  updateBuiltinDisplayName("product-owner", `Product Owner · ${LEAD_VERSION}`)
 
   // 4. Resolve continuation defaults
   const continuation = resolveContinuationConfig(pluginConfig.continuation)

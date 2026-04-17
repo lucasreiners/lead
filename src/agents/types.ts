@@ -14,6 +14,7 @@ export type LeadAgentName =
   | "reviewer"
   | "tester"
   | "guardian"
+  | "product-owner"
 
 // ---------------------------------------------------------------------------
 // Agent modes

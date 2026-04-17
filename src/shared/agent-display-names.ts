@@ -8,6 +8,7 @@ const BUILTIN_DISPLAY_NAMES: Record<string, string> = {
   reviewer: "Reviewer",
   tester: "Tester",
   guardian: "Guardian",
+  "product-owner": "Product Owner",
 }
 
 const overrides: Record<string, string> = {}

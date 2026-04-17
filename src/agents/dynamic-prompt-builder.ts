@@ -137,4 +137,11 @@ export const BUILTIN_AGENT_DISPLAY: Record<LeadAgentName, AvailableAgent> = {
     useWhen: "Security audits, vulnerability checks, compliance review",
     avoidWhen: "Non-security tasks",
   },
+  "product-owner": {
+    name: "product-owner",
+    displayName: "Product Owner",
+    description: "Defines functional requirements, writes user stories, clarifies feature scope",
+    useWhen: "Defining requirements, writing user stories, clarifying scope before planning",
+    avoidWhen: "Implementation, code review, or testing tasks",
+  },
 }

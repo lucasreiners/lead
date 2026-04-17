@@ -1,7 +1,7 @@
 # L.E.A.D. - Lucas Engineering Automation & Delivery
 
-Enterprise-grade [OpenCode](https://opencode.ai) plugin that turns a single AI agent into a **coordinated team of 9
-specialists** — from planning and research through implementation, testing, and review.
+Enterprise-grade [OpenCode](https://opencode.ai) plugin that turns a single AI agent into a **coordinated team of 10
+specialists** — from requirements engineering and planning through implementation, testing, and review.
 
 ## Quick Start
 
@@ -29,8 +29,39 @@ specialists** — from planning and research through implementation, testing, an
 
 ## The Big Picture
 
-Instead of one AI agent, L.E.A.D. gives you a **team of 9 specialist agents** that work together — like a real
-engineering team. Each agent has its own role, permissions, and expertise.
+Instead of one AI agent, L.E.A.D. gives you a **team of 10 specialist agents** that work together — like a real
+engineering team. The team is organized into two chains:
+
+### 🎯 Functional Chain — driven by the **Product Owner**
+
+Defines **what** to build. The Product Owner transforms stakeholder ideas into well-defined functional requirements through structured questioning and ticket system research.
+
+**Two entry points:**
+
+| Entry Point | When to Use |
+|---|---|
+| **Talk to the Product Owner** (Tab to PO agent) | Greenfield — describe a new feature idea, PO clarifies and drafts the requirement |
+| `/read-existing-issue <ticket-id>` | Import an existing Jira/GitHub/Linear ticket, convert to local requirement template, then refine |
+
+**The PO loop:** Clarify → Research (tickets & wiki) → Draft/Update → Present for review → repeat until approved → `/finalize-issue` to push to your ticket system.
+
+The Product Owner uses **MCP servers** for Jira, GitHub Issues, Confluence, etc. — configure them in your project and the PO will use whatever's available.
+
+### 🔧 Technical Chain — driven by the **Tech Lead**
+
+Defines **how** to build it. The Tech Lead orchestrates planning, implementation, testing, and review.
+
+```
+User request → Tech Lead → Architect (creates plan)
+                         → User reviews plan
+                         → /implement → Lead Developer (executes, delegates to Engineers)
+                                      → Tester (verifies each task)
+                                      → Reviewer + Guardian (quality & security)
+```
+
+### Connecting the Chains
+
+A typical workflow: PO finalizes a requirement → stakeholder hands it to the Tech Lead → Architect plans → `/implement` executes. The functional requirement becomes the input for the technical chain.
 
 ## How It Starts Up
 
@@ -41,7 +72,7 @@ When OpenCode loads, it finds L.E.A.D. in the plugin config and runs the entry p
 1. **Load config** → reads `.opencode/lead.jsonc` (project) and `~/.config/opencode/lead.jsonc` (global) to get your
    customizations
 2. **Load skills** → finds any skill files (reusable prompt snippets) from disk
-3. **Create agents** → builds all 9 builtin agents + any custom ones you defined
+3. **Create agents** → builds all 10 builtin agents + any custom ones you defined
 4. **Create hooks** → sets up ~15 lifecycle hooks that monitor and enhance agent behavior
 5. **Return the plugin interface** → hands everything to OpenCode as a set of hooks
 
@@ -52,6 +83,7 @@ Each agent is defined in `src/agents/<name>/index.ts` with an accompanying `prom
 | Agent              | Role                                               | Can Write Code? | When It's Used                               |
 |--------------------|----------------------------------------------------|-----------------|----------------------------------------------|
 | **Tech Lead**      | Orchestrator — routes work to the right specialist | ❌ No            | Default agent, handles all incoming requests |
+| **Product Owner**  | Requirements engineer — stakeholder ideas → functional requirements | ❌ No | Defining and finalizing feature requirements |
 | **Lead Developer** | Executes plans step-by-step, delegates to engineers | ✅ Yes           | Primary agent, activated by `/implement` or Tab |
 | **Engineer**       | Writes code, fixes bugs, implements features       | ✅ Yes           | Subagent, delegated to by Lead Developer     |
 | **Architect**      | Creates implementation plans (`.md` files only)    | 📝 Only `.md`   | Complex features needing planning first      |
@@ -97,6 +129,7 @@ Each agent is defined in `src/agents/<name>/index.ts` with an accompanying `prom
 | Agent      | bash | edit | write    | read/glob/grep | web |
 |------------|------|------|----------|----------------|-----|
 | Tech Lead  | -    | -    | -        | yes            | yes |
+| Product Owner | -    | -    | .md only | yes            | yes |
 | Lead Dev   | yes  | yes  | yes      | yes            | yes |
 | Engineer   | yes  | yes  | yes      | yes            | yes |
 | Architect  | -    | -    | .md only | yes            | yes |
@@ -143,6 +176,15 @@ Hooks are the plugin's nervous system — they intercept events at every stage o
 | **todo-continuation-enforcer** | `todo-continuation-enforcer.ts` | Detect stale in-progress todos, prompt to complete/cancel             |
 | **todo-description-override**  | `todo-description-override.ts`  | Override todowrite description with executor discipline rules         |
 | **session-token-state**        | `session-token-state.ts`        | Track input/output tokens per session                                 |
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `/implement [ticket\|slug]` | Start or resume plan execution via Lead Developer |
+| `/run-workflow [name] [prompt]` | Execute a multi-step workflow definition |
+| `/read-existing-issue <ticket-id>` | Import existing ticket into local requirements folder for refinement |
+| `/finalize-issue` | Push finalized requirement to ticket system (Jira, GitHub Issues, etc.) |
 
 ## The `/implement` Command Flow
 
@@ -299,6 +341,7 @@ src/
 │   ├── prompt-loader.ts               (read prompt.md files)
 │   ├── prompt-utils.ts                (normalize prompts)
 │   ├── tech-lead/                     (orchestrator)
+│   ├── product-owner/                 (requirements engineer)
 │   ├── lead-dev/                      (plan executor)
 │   ├── engineer/                      (implementer)
 │   ├── architect/                     (planner)

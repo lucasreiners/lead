@@ -4,6 +4,8 @@ import type { ConfigHandler } from "../../managers/config-handler"
 import type { CreatedHooks } from "../../hooks/create-hooks"
 import type { LeadConfig } from "../../config/schema"
 import { handleRunWorkflow, checkWorkflowContinuation, handleWorkflowCommand } from "../../features/workflow/hook"
+import { handleFinalizeIssue } from "../../hooks/finalize-issue-hook"
+import { handleReadExistingIssue } from "../../hooks/read-existing-issue-hook"
 import { checkContinuation } from "../../hooks/work-continuation"
 import { checkCompactionRecovery } from "../../hooks/compaction-recovery"
 import { buildTodoPreservationPrompt } from "../../hooks/compaction-todo-preserver"
@@ -221,6 +223,22 @@ export function createPluginAdapter(args: PluginAdapterArgs): Hooks {
         })
         if (result.message) {
           output.parts = [textPart(result.message)]
+        }
+        return
+      }
+
+      if (command === "finalize-issue") {
+        const result = handleFinalizeIssue(cmdArgs)
+        output.parts = [textPart(result.prompt)]
+        return
+      }
+
+      if (command === "read-existing-issue") {
+        const result = handleReadExistingIssue(cmdArgs)
+        if (result.error) {
+          output.parts = [textPart(`❌ ${result.error}`)]
+        } else {
+          output.parts = [textPart(result.prompt)]
         }
         return
       }

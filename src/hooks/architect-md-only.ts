@@ -3,11 +3,11 @@ import type { PolicyResult } from "../domain/policy/policy-result"
 
 /**
  * Architect md-only guard.
- * Enforces that the architect agent only writes `.md` files in the `.lead/` directory.
- * This ensures architect stays in its planning lane and doesn't modify code.
+ * Enforces that architect and product-owner agents only write `.md` files in the `.lead/` directory.
+ * This ensures planning agents stay in their lane and don't modify code.
  */
 
-const ARCHITECT_AGENT = "architect"
+const MD_ONLY_AGENTS = new Set(["architect", "product-owner"])
 const ALLOWED_DIR = ".lead/"
 const WRITE_TOOLS = new Set(["write", "Write", "edit", "Edit"])
 
@@ -24,8 +24,8 @@ export interface ArchitectGuardInput {
 export function checkArchitectWrite(input: ArchitectGuardInput): PolicyResult {
   const { toolName, args, agentName } = input
 
-  // Only applies to architect agent
-  if (agentName !== ARCHITECT_AGENT) {
+  // Only applies to md-only agents (architect, product-owner)
+  if (!agentName || !MD_ONLY_AGENTS.has(agentName)) {
     return allow()
   }
 
@@ -46,7 +46,7 @@ export function checkArchitectWrite(input: ArchitectGuardInput): PolicyResult {
   // Must be a .md file
   if (!normalizedPath.endsWith(".md")) {
     return deny(
-      `Architect agent may only write Markdown (.md) files in the ${ALLOWED_DIR} directory. Attempted: ${filePath}`,
+      `${agentName} agent may only write Markdown (.md) files in the ${ALLOWED_DIR} directory. Attempted: ${filePath}`,
       { toolName, filePath },
     )
   }
@@ -57,7 +57,7 @@ export function checkArchitectWrite(input: ArchitectGuardInput): PolicyResult {
     !normalizedPath.includes("/" + ALLOWED_DIR.replace(/\/$/, ""))
   ) {
     return deny(
-      `Architect agent may only write files in the ${ALLOWED_DIR} directory. Attempted: ${filePath}`,
+      `${agentName} agent may only write files in the ${ALLOWED_DIR} directory. Attempted: ${filePath}`,
       { toolName, filePath },
     )
   }

@@ -12,6 +12,7 @@ const STRATEGIC_AGENTS: Set<LeadAgentName> = new Set([
   "tech-lead",
   "architect",
   "lead-dev",
+  "product-owner",
 ])
 
 /**
@@ -115,7 +116,7 @@ export function resolveAgentModel(
  */
 export function isPrimaryAgent(agentName: LeadAgentName | string): boolean {
   // Primary status is about UI visibility, not model tier
-  const PRIMARY_AGENT_NAMES: Set<LeadAgentName> = new Set(["tech-lead", "lead-dev"])
+  const PRIMARY_AGENT_NAMES: Set<LeadAgentName> = new Set(["tech-lead", "lead-dev", "product-owner"])
   return PRIMARY_AGENT_NAMES.has(agentName as LeadAgentName)
 }
 

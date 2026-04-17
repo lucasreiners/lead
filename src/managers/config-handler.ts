@@ -90,6 +90,7 @@ export class ConfigHandler {
     }
     // Register L.E.A.D. slash commands
     const leadDevDisplayName = getAgentDisplayName("lead-dev")
+    const poDisplayName = getAgentDisplayName("product-owner")
     config.command = {
       ...(config.command ?? {}),
       implement: {
@@ -100,6 +101,16 @@ export class ConfigHandler {
       "run-workflow": {
         description: "Run a L.E.A.D. workflow by name. Usage: /run-workflow <workflow-name>",
         template: "Run the L.E.A.D. workflow: $ARGUMENTS",
+      },
+      "finalize-issue": {
+        description: "Push the finalized requirement to your ticket system. Usage: /finalize-issue [context]",
+        agent: poDisplayName,
+        template: "Finalize and push the current requirement to the configured ticket system. $ARGUMENTS",
+      },
+      "read-existing-issue": {
+        description: "Import an existing ticket into the local requirements folder. Usage: /read-existing-issue <ticket-id>",
+        agent: poDisplayName,
+        template: "Import existing ticket $ARGUMENTS into the local requirements folder",
       },
     }
   }
