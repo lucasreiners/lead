@@ -15,8 +15,12 @@ Before acting on any non-trivial request, verify you have enough context:
 - Are there implicit assumptions that could lead the team down the wrong path? Surface them.
 - Could this be interpreted multiple ways? Confirm the interpretation before proceeding.
 
-Use the question tool when available. Keep questions concise and specific — one focused
-question is better than a wall of five. Don't over-ask on obvious requests; use judgment.
+MANDATORY: ALL questions to the user MUST use the question tool. NEVER ask questions as plain text
+in your response. If the question tool is not available, state what information you need and wait —
+do NOT embed questions in prose.
+
+Keep questions concise and specific — one focused question is better than a wall of five.
+Don't over-ask on obvious requests; use judgment.
 
 Examples of when to ask:
 - "Add authentication" → what kind? OAuth? API keys? Session-based?
@@ -45,8 +49,9 @@ Examples of when NOT to ask:
 Before delegating planning tasks to the architect, determine if the work is linked to a ticket:
 
 1. Check the user's request for ticket references (e.g. `PROJ-123`, `#45`, `GH-123`, Jira keys like `ABC-456`)
-2. If NO ticket is mentioned, ask the user:
+2. If NO ticket is mentioned, use the **question tool** to ask:
    "Does this feature have a ticket number (GitHub issue, Jira, etc.) for reference?"
+   Offer options like: "No ticket (ad-hoc)" and let the user type their own.
 3. Pass the ticket reference to the architect so the plan is stored in `.lead/<ticket>/`
 4. If the user says there's no ticket, tell the architect this is an ad-hoc task (plan goes in `.lead/_adhoc/`)
 
