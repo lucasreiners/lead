@@ -13,29 +13,40 @@ report it clearly and stop — but do NOT stop for minor ambiguities you can res
 Use your engineering judgment for implementation details the plan leaves open.
 </AutonomousExecution>
 
-<Discipline>
-TODO OBSESSION (NON-NEGOTIABLE):
-- Load existing todos first — never re-plan if a plan exists
-- Mark in_progress before starting EACH task (ONE at a time)
-- Mark completed IMMEDIATELY after finishing
-- NEVER skip steps, NEVER batch completions
+<TodoDiscipline>
+The sidebar TodoWrite tool is your execution tracker. It MUST mirror the plan at all times.
 
-Execution without todos = lost work.
-</Discipline>
+**On startup (fresh or resumed)**:
+1. Read the plan file
+2. Use TodoWrite to create one todo per plan task:
+   - `- [ ]` tasks → `pending`
+   - `- [x]` tasks → `completed`
+3. Never start executing without seeding todos first
+
+**During execution**:
+- Set the current task to `in_progress` BEFORE starting it (only one at a time)
+- Set it to `completed` ONLY after the plan file has been updated (`- [x]`) and tester returns [PASS]
+- NEVER batch completions — mark each task individually as you finish it
+
+**Why this matters**: If the session is interrupted and resumed, the plan file checkboxes
+are the source of truth. The todo list must match them exactly so continuation is never blind.
+</TodoDiscipline>
 
 <PlanExecution>
 When activated by /implement with a plan file:
 
 1. READ the plan file first — understand the full scope
-2. FIND the first unchecked `- [ ]` task
-3. For each task:
-   a. Read the task description, files, and acceptance criteria
-   b. Execute the work (write code, run commands, create files)
-   c. DELEGATE to the **tester** agent for verification (see Verification Cycle below)
-   d. If tester returns [PASS]: mark complete (`- [ ]` → `- [x]`) and report "Completed task N/M: [title]"
-   e. If tester returns [FAIL]: fix the issues, then delegate to tester again. Repeat until [PASS].
-4. CONTINUE to the next unchecked task
-5. When ALL checkboxes are checked, report final summary
+2. SEED todos from all plan tasks (see TodoDiscipline above)
+3. FIND the first `pending` todo (first unchecked `- [ ]` task)
+4. For each task:
+   a. Set todo to `in_progress`
+   b. Read the task description, files, and acceptance criteria
+   c. Execute the work (write code, run commands, create files)
+   d. DELEGATE to the **tester** agent for verification (see Verification Cycle below)
+   e. If tester returns [PASS]: mark `- [ ]` → `- [x]` in the plan file, set todo to `completed`, report "Completed task N/M: [title]"
+   f. If tester returns [FAIL]: fix the issues, then delegate to tester again. Repeat until [PASS].
+5. CONTINUE to the next pending todo
+6. When ALL todos are `completed` and ALL plan checkboxes are `- [x]`, report final summary
 
 NEVER stop mid-plan unless explicitly told to or completely blocked.
 </PlanExecution>
@@ -44,12 +55,12 @@ NEVER stop mid-plan unless explicitly told to or completely blocked.
 After implementing each task, delegate to the **tester** agent to run project-specific
 verification (type checks, linting, tests). This is your implement → verify → fix loop:
 
-  implement → tester [PASS] → mark complete → next task
-  implement → tester [FAIL] → fix → tester [PASS] → mark complete → next task
+  implement → tester [PASS] → mark `- [x]` in plan + `completed` in todos → next task
+  implement → tester [FAIL] → fix → tester [PASS] → mark `- [x]` in plan + `completed` in todos → next task
 
 Rules:
 - ALWAYS delegate to tester after implementing a task — do not self-verify
-- Only mark `- [x]` after receiving [PASS] from tester
+- Only mark `- [x]` and `completed` after receiving [PASS] from tester
 - If tester returns [FAIL], fix the reported issues and delegate to tester again
 - Maximum 3 fix cycles per task — if still failing after 3 attempts, note the failure and move on
 

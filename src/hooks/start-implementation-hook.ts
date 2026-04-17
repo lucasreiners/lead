@@ -195,25 +195,63 @@ export async function handleStartImplementation(options: StartImplementationOpti
 function buildStartPrompt(
   state: WorkState,
   progress: ReturnType<typeof getPlanProgress>,
-  _planContent: string,
+  planContent: string,
 ): string {
   const remaining = progress.total - progress.completed
-  return `You are now the **Executor** — your job is to execute the plan at \`${state.active_plan}\`.
+  const todoSeedBlock = buildTodoSeedBlock(planContent)
+
+  return `You are now the **Lead Developer** executing the plan at \`${state.active_plan}\`.
 
 **Plan**: ${state.plan_name}
 **Progress**: ${progress.completed}/${progress.total} tasks complete (${remaining} remaining)
 
-Start by reading the plan file to understand the current state. Find the first unchecked \`- [ ]\` task and begin executing it. Work through tasks sequentially, marking each \`- [x]\` when complete.
+## Step 1 — Seed your sidebar todos
 
-**Execution protocol**:
-1. Read the plan file to find the first unchecked task
-2. Mark it in_progress in the sidebar todos
-3. Execute the task step by step
-4. Verify acceptance criteria are met
-5. Mark \`- [ ]\` → \`- [x]\` in the plan file
-6. Continue to the next task
+Before writing any code, use the **TodoWrite tool** to load ALL remaining plan tasks as todos.
+Each \`- [ ]\` task in the plan must become one todo item with status \`pending\`.
+Each \`- [x]\` task must become one todo item with status \`completed\`.
+${todoSeedBlock}
+This is non-negotiable. The todo list IS your execution tracker. Without it, continuation is blind.
+
+## Step 2 — Execute
+
+Work through tasks top-to-bottom:
+1. Set the current task todo to \`in_progress\`
+2. Execute the task (write code, run commands, create files)
+3. Delegate to the **tester** agent for verification
+4. On [PASS]: mark \`- [ ]\` → \`- [x]\` in the plan file AND set todo to \`completed\`
+5. On [FAIL]: fix, re-test, repeat (max 3 cycles)
+6. Move to next task
 
 Do not stop until all tasks are complete or you are explicitly blocked.`
+}
+
+function buildTodoSeedBlock(planContent: string): string {
+  if (!planContent) return ""
+
+  const lines = planContent.split("\n")
+  const todos: Array<{ label: string; done: boolean }> = []
+
+  for (const line of lines) {
+    const unchecked = line.match(/^\s*-\s+\[ \]\s+(.+)$/)
+    if (unchecked?.[1]) {
+      todos.push({ label: unchecked[1].trim(), done: false })
+      continue
+    }
+    const checked = line.match(/^\s*-\s+\[x\]\s+(.+)$/i)
+    if (checked?.[1]) {
+      todos.push({ label: checked[1].trim(), done: true })
+    }
+  }
+
+  if (todos.length === 0) return ""
+
+  const lines2 = ["", "The todos to seed (in order):"]
+  for (const t of todos) {
+    lines2.push(`- ${t.done ? "[completed]" : "[pending]"} ${t.label}`)
+  }
+  lines2.push("")
+  return lines2.join("\n")
 }
 
 function buildContinuationPrompt(
@@ -221,10 +259,23 @@ function buildContinuationPrompt(
   progress: ReturnType<typeof getPlanProgress>,
 ): string {
   const remaining = progress.total - progress.completed
-  return `Resuming work on plan: **${state.plan_name}**
+  return `Resuming execution of plan: **${state.plan_name}**
 
 **Progress**: ${progress.completed}/${progress.total} tasks complete (${remaining} remaining)
 **Plan file**: \`${state.active_plan}\`
 
-Read the plan file, find the next unchecked \`- [ ]\` task, and continue execution.`
+## Step 1 — Re-sync your sidebar todos
+
+Read the plan file at \`${state.active_plan}\` and use **TodoWrite** to rebuild the full todo list:
+- Every \`- [ ]\` task → \`pending\`
+- Every \`- [x]\` task → \`completed\`
+
+This re-sync is mandatory before continuing — it is the only reliable source of truth after a session break.
+
+## Step 2 — Continue execution
+
+Find the first \`pending\` todo (first unchecked \`- [ ]\` in the plan), set it to \`in_progress\`, and execute it.
+Follow the same loop: implement → tester [PASS] → mark \`- [x]\` in plan + \`completed\` in todos → next task.
+
+Do not stop until all tasks are complete or you are explicitly blocked.`
 }
