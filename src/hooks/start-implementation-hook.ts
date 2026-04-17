@@ -205,26 +205,29 @@ function buildStartPrompt(
 **Plan**: ${state.plan_name}
 **Progress**: ${progress.completed}/${progress.total} tasks complete (${remaining} remaining)
 
-## Step 1 — Seed your sidebar todos
+## CRITICAL — Your FIRST action
 
-Before writing any code, use the **TodoWrite tool** to load ALL items from the plan's \`## Progress\` section as todos.
-Each \`- [ ]\` item in \`## Progress\` must become one todo with status \`pending\`.
-Each \`- [x]\` item must become one todo with status \`completed\`.
+Your VERY FIRST tool call MUST be **TodoWrite**. Do NOT read files, write code, or call any other tool before TodoWrite.
+Load ALL items from the plan's \`## Progress\` section:
+- Each \`- [ ]\` item → todo with status \`pending\`
+- Each \`- [x]\` item → todo with status \`completed\`
 ${todoSeedBlock}
-This is non-negotiable. The todo list IS your execution tracker. Without it, continuation is blind.
+If you skip this step, the user has NO visibility into what you're doing. This is non-negotiable.
 
-## Step 2 — Execute
+## Then — Execute tasks
 
 The plan has two sections: \`## Progress\` (checklist to update) and \`## TODOs\` (detailed descriptions to read).
 
-Work through tasks top-to-bottom:
-1. Set the current task todo to \`in_progress\`
+For EACH task, follow this exact sequence:
+1. **TodoWrite**: set the current task to \`in_progress\` (include ALL other todos in the call)
 2. Read the matching \`## TODOs\` entry for What/Files/Acceptance details
 3. Execute the task (write code, run commands, create files)
 4. Delegate to the **tester** agent for verification
-5. On [PASS]: mark \`- [ ]\` → \`- [x]\` in \`## Progress\` AND set todo to \`completed\`
+5. On [PASS]: **Edit** the plan file to mark \`- [ ]\` → \`- [x]\` in \`## Progress\`, THEN **TodoWrite** to set the task to \`completed\`
 6. On [FAIL]: fix, re-test, repeat (max 3 cycles)
 7. Move to next task
+
+EVERY task transition requires a TodoWrite call. No exceptions.
 
 Do not stop until all tasks are complete or you are explicitly blocked.`
 }
@@ -267,19 +270,25 @@ function buildContinuationPrompt(
 **Progress**: ${progress.completed}/${progress.total} tasks complete (${remaining} remaining)
 **Plan file**: \`${state.active_plan}\`
 
-## Step 1 — Re-sync your sidebar todos
+## CRITICAL — Your FIRST action
 
-Read the plan file at \`${state.active_plan}\` and use **TodoWrite** to rebuild the full todo list from the \`## Progress\` section:
+Your VERY FIRST tool call MUST be to **Read** the plan file, and your SECOND tool call MUST be **TodoWrite**.
+Do NOT write code or call any other tool before these two calls.
+
+Rebuild the full todo list from the \`## Progress\` section:
 - Every \`- [ ]\` item → \`pending\`
 - Every \`- [x]\` item → \`completed\`
 
-This re-sync is mandatory before continuing — \`## Progress\` is the only reliable source of truth after a session break.
+If you skip this, the user has NO visibility into progress. This is non-negotiable.
 
-## Step 2 — Continue execution
+## Then — Continue execution
 
-Find the first \`pending\` todo (first unchecked \`- [ ]\` in \`## Progress\`), set it to \`in_progress\`, and execute it.
+Find the first \`pending\` todo (first unchecked \`- [ ]\` in \`## Progress\`), **TodoWrite** it to \`in_progress\`, and execute it.
 Read the matching \`## TODOs\` entry for detailed What/Files/Acceptance context.
-Follow the same loop: implement → tester [PASS] → mark \`- [x]\` in \`## Progress\` + \`completed\` in todos → next task.
+
+For EACH task: implement → tester [PASS] → **Edit** plan (\`- [x]\`) → **TodoWrite** (\`completed\`) → next task.
+
+EVERY task transition requires a TodoWrite call. No exceptions.
 
 Do not stop until all tasks are complete or you are explicitly blocked.`
 }
