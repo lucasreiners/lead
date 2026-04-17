@@ -30,9 +30,38 @@ specialists** — from requirements engineering and planning through implementat
 ## The Big Picture
 
 Instead of one AI agent, L.E.A.D. gives you a **team of 10 specialist agents** that work together — like a real
-engineering team. Each agent has its own role, permissions, and expertise.
+engineering team. The team is organized into two chains:
 
-Highlights include a **Product Owner agent for requirements engineering** — transforms stakeholder ideas into well-defined functional requirements through structured questioning, with `/finalize-issue` to push to your ticket system via MCP.
+### 🎯 Functional Chain — driven by the **Product Owner**
+
+Defines **what** to build. The Product Owner transforms stakeholder ideas into well-defined functional requirements through structured questioning and ticket system research.
+
+**Two entry points:**
+
+| Entry Point | When to Use |
+|---|---|
+| **Talk to the Product Owner** (Tab to PO agent) | Greenfield — describe a new feature idea, PO clarifies and drafts the requirement |
+| `/read-existing-issue <ticket-id>` | Import an existing Jira/GitHub/Linear ticket, convert to local requirement template, then refine |
+
+**The PO loop:** Clarify → Research (tickets & wiki) → Draft/Update → Present for review → repeat until approved → `/finalize-issue` to push to your ticket system.
+
+The Product Owner uses **MCP servers** for Jira, GitHub Issues, Confluence, etc. — configure them in your project and the PO will use whatever's available.
+
+### 🔧 Technical Chain — driven by the **Tech Lead**
+
+Defines **how** to build it. The Tech Lead orchestrates planning, implementation, testing, and review.
+
+```
+User request → Tech Lead → Architect (creates plan)
+                         → User reviews plan
+                         → /implement → Lead Developer (executes, delegates to Engineers)
+                                      → Tester (verifies each task)
+                                      → Reviewer + Guardian (quality & security)
+```
+
+### Connecting the Chains
+
+A typical workflow: PO finalizes a requirement → stakeholder hands it to the Tech Lead → Architect plans → `/implement` executes. The functional requirement becomes the input for the technical chain.
 
 ## How It Starts Up
 
@@ -154,6 +183,7 @@ Hooks are the plugin's nervous system — they intercept events at every stage o
 |---------|-------------|
 | `/implement [ticket\|slug]` | Start or resume plan execution via Lead Developer |
 | `/run-workflow [name] [prompt]` | Execute a multi-step workflow definition |
+| `/read-existing-issue <ticket-id>` | Import existing ticket into local requirements folder for refinement |
 | `/finalize-issue` | Push finalized requirement to ticket system (Jira, GitHub Issues, etc.) |
 
 ## The `/implement` Command Flow
