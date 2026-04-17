@@ -13,6 +13,7 @@ import { createResearcherAgent } from "./researcher/index"
 import { createReviewerAgent } from "./reviewer/index"
 import { createGuardianAgent } from "./guardian/index"
 import { createTesterAgent } from "./tester/index"
+import { createProductOwnerAgent } from "./product-owner/index"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,6 +48,7 @@ export const AGENT_FACTORIES: Record<LeadAgentName, AgentFactory> = {
   reviewer: createReviewerAgent,
   tester: createTesterAgent,
   guardian: createGuardianAgent,
+  "product-owner": createProductOwnerAgent,
 }
 
 // ---------------------------------------------------------------------------
@@ -135,6 +137,15 @@ export const AGENT_METADATA: Record<LeadAgentName, AgentMetadata> = {
     ],
     useWhen: "Security audits, vulnerability checks, spec compliance review",
     avoidWhen: "Non-security related tasks (fast-exit with APPROVE if irrelevant)",
+  },
+  "product-owner": {
+    category: "requirements",
+    cost: "EXPENSIVE",
+    triggers: [
+      { domain: "Requirements", trigger: "Defining features, writing user stories, clarifying scope" },
+    ],
+    useWhen: "Defining requirements, writing user stories, clarifying feature scope",
+    avoidWhen: "Implementation, code review, or testing tasks",
   },
 }
 

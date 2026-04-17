@@ -19,11 +19,12 @@ bun test
 
 ## Agent Overview
 
-L.E.A.D. provides **9 specialist agents** organized into two tiers:
+L.E.A.D. provides **10 specialist agents** organized into two tiers:
 
 | Agent | Key | Mode | Model Tier | Role |
 |-------|-----|------|------------|------|
 | **Tech Lead** | `tech-lead` | primary | Strategic (Opus) | Orchestrator — routes work to specialists |
+| **Product Owner** | `product-owner` | primary | Strategic (Opus) | Requirements engineer — transforms stakeholder ideas into functional requirements |
 | **Lead Developer** | `lead-dev` | primary | Strategic (Opus) | Plan executor — drives implementation with TodoWrite tracking |
 | **Engineer** | `engineer` | subagent | Engineering (Sonnet) | Code implementer — writes features, fixes, tests |
 | **Architect** | `architect` | subagent | Strategic (Opus) | Planner — creates structured plans in `.lead/` |
@@ -50,6 +51,20 @@ The entry point for all user requests. Analyzes intent, gathers context, and rou
   - Links work to tickets when applicable
   - Delegates planning to Architect, implementation to Engineer/Lead Dev
   - After Architect produces a plan, instructs user to run `/implement` — never starts implementation automatically
+
+### Product Owner
+
+The entry point for functional/business requirements. Transforms stakeholder ideas into well-defined requirements through structured questioning.
+
+- **Can**: Read files, write `.md` files, ask questions (via question tool), delegate to researcher
+- **Cannot**: Write code, run bash commands, edit files
+- **Key behaviors**:
+  - Uses the **question tool** aggressively to clarify every ambiguity
+  - Researches existing tickets/features via MCP tools (Jira, GitHub Issues, Confluence, etc.)
+  - Drafts functional requirements with: Summary, User Stories, Acceptance Criteria, Out of Scope, Dependencies
+  - Presents requirement summary for stakeholder review before finalization
+  - `/finalize-issue` pushes the approved requirement to the configured ticket system
+  - If no ticket system MCP tools are configured, informs user about setup
 
 ### Lead Developer
 
@@ -160,6 +175,16 @@ User request → Tech Lead → Engineer (simple tasks)
 
 ```
 Tab to Lead Developer → direct implementation work with TodoWrite tracking
+```
+
+### Requirements Engineering
+
+```
+Stakeholder idea → Product Owner (clarifying questions, research)
+                 → Draft requirement (.md)
+                 → Stakeholder reviews & requests changes
+                 → Iterate until satisfied
+                 → /finalize-issue → ticket created in external system
 ```
 
 ---

@@ -1,7 +1,7 @@
 # L.E.A.D. - Lucas Engineering Automation & Delivery
 
-Enterprise-grade [OpenCode](https://opencode.ai) plugin that turns a single AI agent into a **coordinated team of 9
-specialists** — from planning and research through implementation, testing, and review.
+Enterprise-grade [OpenCode](https://opencode.ai) plugin that turns a single AI agent into a **coordinated team of 10
+specialists** — from requirements engineering and planning through implementation, testing, and review.
 
 ## Quick Start
 
@@ -29,8 +29,10 @@ specialists** — from planning and research through implementation, testing, an
 
 ## The Big Picture
 
-Instead of one AI agent, L.E.A.D. gives you a **team of 9 specialist agents** that work together — like a real
+Instead of one AI agent, L.E.A.D. gives you a **team of 10 specialist agents** that work together — like a real
 engineering team. Each agent has its own role, permissions, and expertise.
+
+Highlights include a **Product Owner agent for requirements engineering** — transforms stakeholder ideas into well-defined functional requirements through structured questioning, with `/finalize-issue` to push to your ticket system via MCP.
 
 ## How It Starts Up
 
@@ -41,7 +43,7 @@ When OpenCode loads, it finds L.E.A.D. in the plugin config and runs the entry p
 1. **Load config** → reads `.opencode/lead.jsonc` (project) and `~/.config/opencode/lead.jsonc` (global) to get your
    customizations
 2. **Load skills** → finds any skill files (reusable prompt snippets) from disk
-3. **Create agents** → builds all 9 builtin agents + any custom ones you defined
+3. **Create agents** → builds all 10 builtin agents + any custom ones you defined
 4. **Create hooks** → sets up ~15 lifecycle hooks that monitor and enhance agent behavior
 5. **Return the plugin interface** → hands everything to OpenCode as a set of hooks
 
@@ -52,6 +54,7 @@ Each agent is defined in `src/agents/<name>/index.ts` with an accompanying `prom
 | Agent              | Role                                               | Can Write Code? | When It's Used                               |
 |--------------------|----------------------------------------------------|-----------------|----------------------------------------------|
 | **Tech Lead**      | Orchestrator — routes work to the right specialist | ❌ No            | Default agent, handles all incoming requests |
+| **Product Owner**  | Requirements engineer — stakeholder ideas → functional requirements | ❌ No | Defining and finalizing feature requirements |
 | **Lead Developer** | Executes plans step-by-step, delegates to engineers | ✅ Yes           | Primary agent, activated by `/implement` or Tab |
 | **Engineer**       | Writes code, fixes bugs, implements features       | ✅ Yes           | Subagent, delegated to by Lead Developer     |
 | **Architect**      | Creates implementation plans (`.md` files only)    | 📝 Only `.md`   | Complex features needing planning first      |
@@ -97,6 +100,7 @@ Each agent is defined in `src/agents/<name>/index.ts` with an accompanying `prom
 | Agent      | bash | edit | write    | read/glob/grep | web |
 |------------|------|------|----------|----------------|-----|
 | Tech Lead  | -    | -    | -        | yes            | yes |
+| Product Owner | -    | -    | .md only | yes            | yes |
 | Lead Dev   | yes  | yes  | yes      | yes            | yes |
 | Engineer   | yes  | yes  | yes      | yes            | yes |
 | Architect  | -    | -    | .md only | yes            | yes |
@@ -143,6 +147,14 @@ Hooks are the plugin's nervous system — they intercept events at every stage o
 | **todo-continuation-enforcer** | `todo-continuation-enforcer.ts` | Detect stale in-progress todos, prompt to complete/cancel             |
 | **todo-description-override**  | `todo-description-override.ts`  | Override todowrite description with executor discipline rules         |
 | **session-token-state**        | `session-token-state.ts`        | Track input/output tokens per session                                 |
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `/implement [ticket\|slug]` | Start or resume plan execution via Lead Developer |
+| `/run-workflow [name] [prompt]` | Execute a multi-step workflow definition |
+| `/finalize-issue` | Push finalized requirement to ticket system (Jira, GitHub Issues, etc.) |
 
 ## The `/implement` Command Flow
 
@@ -299,6 +311,7 @@ src/
 │   ├── prompt-loader.ts               (read prompt.md files)
 │   ├── prompt-utils.ts                (normalize prompts)
 │   ├── tech-lead/                     (orchestrator)
+│   ├── product-owner/                 (requirements engineer)
 │   ├── lead-dev/                      (plan executor)
 │   ├── engineer/                      (implementer)
 │   ├── architect/                     (planner)

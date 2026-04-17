@@ -12,6 +12,7 @@ const ALL_AGENT_NAMES: LeadAgentName[] = [
   "reviewer",
   "tester",
   "guardian",
+  "product-owner",
 ]
 
 describe("createBuiltinAgents", () => {
@@ -20,7 +21,7 @@ describe("createBuiltinAgents", () => {
     for (const name of ALL_AGENT_NAMES) {
       expect(agents[name]).toBeDefined()
     }
-    expect(Object.keys(agents)).toHaveLength(9)
+    expect(Object.keys(agents)).toHaveLength(10)
   })
 
   it("excludes disabled agents", () => {
@@ -31,7 +32,7 @@ describe("createBuiltinAgents", () => {
     expect(agents.guardian).toBeUndefined()
     expect(agents["tech-lead"]).toBeDefined()
     expect(agents.reviewer).toBeDefined()
-    expect(Object.keys(agents)).toHaveLength(7)
+    expect(Object.keys(agents)).toHaveLength(8)
   })
 
   it("primary agents (tech-lead) use uiModel when provided", () => {
@@ -74,6 +75,7 @@ describe("createBuiltinAgents", () => {
     expect(agents.researcher?.description).toBe("Technical Researcher")
     expect(agents.reviewer?.description).toBe("Code Reviewer")
     expect(agents.guardian?.description).toBe("Security Guardian")
+    expect(agents["product-owner"]?.description).toBe("Product Owner")
   })
 })
 
@@ -94,6 +96,7 @@ describe("AGENT_FACTORIES", () => {
     expect(AGENT_FACTORIES.researcher.mode).toBe("subagent")
     expect(AGENT_FACTORIES.reviewer.mode).toBe("subagent")
     expect(AGENT_FACTORIES.guardian.mode).toBe("subagent")
+    expect(AGENT_FACTORIES["product-owner"].mode).toBe("primary")
   })
 })
 
