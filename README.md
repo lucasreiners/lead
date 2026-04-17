@@ -52,8 +52,8 @@ Each agent is defined in `src/agents/<name>/index.ts` with an accompanying `prom
 | Agent              | Role                                               | Can Write Code? | When It's Used                               |
 |--------------------|----------------------------------------------------|-----------------|----------------------------------------------|
 | **Tech Lead**      | Orchestrator — routes work to the right specialist | ❌ No            | Default agent, handles all incoming requests |
-| **Engineer**       | Writes code, fixes bugs, implements features       | ✅ Yes           | Direct implementation tasks                  |
-| **Lead Developer** | Executes plans step-by-step                        | ✅ Yes           | Activated by `/implement` command            |
+| **Lead Developer** | Executes plans step-by-step, delegates to engineers | ✅ Yes           | Primary agent, activated by `/implement` or Tab |
+| **Engineer**       | Writes code, fixes bugs, implements features       | ✅ Yes           | Subagent, delegated to by Lead Developer     |
 | **Architect**      | Creates implementation plans (`.md` files only)    | 📝 Only `.md`   | Complex features needing planning first      |
 | **Code Analyst**   | Explores codebases, traces dependencies            | ❌ Read-only     | Understanding existing code                  |
 | **Researcher**     | Looks up external docs, libraries, APIs            | ❌ Read-only     | "How does library X work?"                   |

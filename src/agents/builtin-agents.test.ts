@@ -87,8 +87,8 @@ describe("AGENT_FACTORIES", () => {
 
   it("each factory has a mode", () => {
     expect(AGENT_FACTORIES["tech-lead"].mode).toBe("primary")
-    expect(AGENT_FACTORIES["lead-dev"].mode).toBe("subagent")
-    expect(AGENT_FACTORIES.engineer.mode).toBe("all")
+    expect(AGENT_FACTORIES["lead-dev"].mode).toBe("primary")
+    expect(AGENT_FACTORIES.engineer.mode).toBe("subagent")
     expect(AGENT_FACTORIES.architect.mode).toBe("subagent")
     expect(AGENT_FACTORIES["code-analyst"].mode).toBe("subagent")
     expect(AGENT_FACTORIES.researcher.mode).toBe("subagent")

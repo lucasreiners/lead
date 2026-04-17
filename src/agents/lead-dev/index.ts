@@ -157,5 +157,5 @@ export function createExecutorAgentWithOptions(
 
 export const createExecutorAgent: AgentFactory = Object.assign(
   (model: string): AgentConfig => createExecutorAgentWithOptions(model),
-  { mode: "subagent" as const }
+  { mode: "primary" as const }
 )

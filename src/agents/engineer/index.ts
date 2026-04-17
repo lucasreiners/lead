@@ -41,5 +41,5 @@ export const createEngineerAgent: AgentFactory = Object.assign(
     model,
     prompt: BASE_PROMPT,
   }),
-  { mode: "all" as const }
+  { mode: "subagent" as const }
 )
