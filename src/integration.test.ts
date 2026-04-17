@@ -2,6 +2,7 @@ import { describe, it, expect } from "bun:test"
 import pluginModule from "./index"
 import { LeadPlugin } from "./index"
 import type { PluginModule } from "@opencode-ai/plugin"
+import { getAgentDisplayName } from "./shared/agent-display-names"
 
 describe("Lead Plugin integration", () => {
   it("satisfies PluginModule contract", () => {
@@ -60,7 +61,7 @@ describe("Lead Plugin integration", () => {
 
     const registeredAgents = Object.keys(config.agent ?? {})
     const expectedAgents = [
-      "Tech Lead",
+      getAgentDisplayName("tech-lead"),
       "Lead Developer",
       "Engineer",
       "Architect",

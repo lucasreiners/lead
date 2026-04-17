@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test"
 import { ConfigHandler } from "./config-handler"
+import { getAgentDisplayName } from "../shared/agent-display-names"
 import type { AgentConfig } from "@opencode-ai/sdk"
 
 const mockAgent: AgentConfig = {
@@ -18,7 +19,7 @@ describe("ConfigHandler", () => {
     const config: { agent?: Record<string, AgentConfig | undefined>; default_agent?: string } = {}
     handler.handle(config)
 
-    expect(config.agent?.["Tech Lead"]).toBeDefined()
+    expect(config.agent?.[getAgentDisplayName("tech-lead")]).toBeDefined()
     expect(config.agent?.["Lead Developer"]).toBeDefined()
   })
 
@@ -45,7 +46,7 @@ describe("ConfigHandler", () => {
     handler.handle(config)
 
     expect(config.agent?.existing).toBeDefined()
-    expect(config.agent?.["Tech Lead"]).toBeDefined()
+    expect(config.agent?.[getAgentDisplayName("tech-lead")]).toBeDefined()
   })
 
   it("getAgentNames returns all registered names", () => {

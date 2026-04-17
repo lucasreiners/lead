@@ -1,5 +1,6 @@
 import type { Plugin, PluginModule } from "@opencode-ai/plugin"
 import { setClient } from "./shared/log"
+import { updateBuiltinDisplayName } from "./shared/agent-display-names"
 import { loadLeadConfig } from "./config/loader"
 import { resolveContinuationConfig } from "./config/continuation"
 import { createTools } from "./create-tools"
@@ -25,19 +26,8 @@ const LeadPlugin: Plugin = async (ctx) => {
   // 2. Load configuration
   const pluginConfig = loadLeadConfig(ctx.directory)
 
-  // 3. Show welcome toast (delayed to let TUI initialize)
-  setTimeout(() => {
-    ctx.client.tui.showToast({
-      body: {
-        title: "L.E.A.D.",
-        message: `v${LEAD_VERSION} — Lucas Engineering Automation & Delivery — ready`,
-        variant: "success",
-        duration: 4000,
-      },
-    }).catch((err: unknown) => {
-      console.error("[lead] showToast failed:", err)
-    })
-  }, 1000)
+  // 3. Inject version into Tech Lead display name
+  updateBuiltinDisplayName("tech-lead", `Tech Lead (L.E.A.D. v${LEAD_VERSION})`)
 
   // 4. Resolve continuation defaults
   const continuation = resolveContinuationConfig(pluginConfig.continuation)
