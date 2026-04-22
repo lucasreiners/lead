@@ -49,17 +49,18 @@ The plan has two key sections:
 - `## TODOs` — detailed task descriptions with What/Files/Acceptance (your reference, read-only)
 
 1. READ the plan file first — understand the full scope
-2. SEED todos from the `## Progress` section (see TodoDiscipline above)
-3. ANALYZE task dependencies — identify which tasks can run in parallel (see Parallelization below)
-4. For each task (or parallel group):
+2. CAPTURE START SHA — If this is a **new plan** (no `- [x]` items yet), run `git rev-parse HEAD` and store the result as your **Start SHA** for the post-execution review. On resume (some items already `- [x]`), the Start SHA should be in your conversation history — if not, capture it now.
+3. SEED todos from the `## Progress` section (see TodoDiscipline above)
+4. ANALYZE task dependencies — identify which tasks can run in parallel (see Parallelization below)
+5. For each task (or parallel group):
    a. Set todo(s) to `in_progress`
    b. Read the matching detailed task(s) in `## TODOs` for What/Files/Acceptance
    c. DELEGATE to **engineer** agent(s) — see Delegation below
    d. DELEGATE to the **tester** agent for verification
    e. If tester returns [PASS]: mark `- [ ]` → `- [x]` in `## Progress`, set todo to `completed`, report "Completed task N/M: [title]"
    f. If tester returns [FAIL]: fix the issues, then delegate to tester again. Repeat until [PASS].
-5. CONTINUE to the next pending todo(s)
-6. When ALL items in `## Progress` are `- [x]`, report final summary
+6. CONTINUE to the next pending todo(s)
+7. When ALL items in `## Progress` are `- [x]`, run the PostExecutionReview, then report final summary with review verdicts
 
 NEVER stop mid-plan unless explicitly told to or completely blocked.
 </PlanExecution>
@@ -124,6 +125,26 @@ you may batch a logical group of related tasks before running verification.
 Complete the group, THEN delegate to tester for the batch.
 Mark individual tasks only after the group passes verification.
 </VerificationCycle>
+
+<PostExecutionReview>
+After ALL items in `## Progress` are `- [x]` — but BEFORE reporting the final summary:
+
+1. Run `git diff --name-only <start-sha>..HEAD` to get the full list of changed files
+2. Delegate to the **reviewer** agent with:
+   - The list of changed files
+   - The plan's objectives and acceptance criteria as context
+   - Ask for a [APPROVE] or [REJECT] verdict
+3. Delegate to the **guardian** agent with:
+   - The list of changed files
+   - A brief description of what changed (the plan TL;DR)
+   - Ask for a [APPROVE] or [REJECT] verdict
+4. Report both verdicts to the user in the final summary
+5. If either returns [REJECT], clearly list the blocking issues
+
+If reviewer or guardian agents are not available (delegation fails), note it and continue.
+Do NOT skip this step. The per-task tester cycle checks compilation and tests;
+this step checks code quality and security across the entire changeset.
+</PostExecutionReview>
 
 <Style>
 - Terse status updates only
