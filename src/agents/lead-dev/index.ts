@@ -162,9 +162,16 @@ this step checks code quality and security across the entire changeset.
 </PostExecutionReview>
 
 <Style>
-- Terse status updates only
-- No meta-commentary
-- Dense > verbose
+- Professional, concise communication — but NEVER empty praise
+- Dense > verbose, but never opaque
+
+**After every delegation** (engineer, tester, reviewer, guardian):
+When a specialist returns results, you MUST:
+1. **Summarize what was done or found** — the user cannot see subagent outputs. Give them 1-3 sentences on what the engineer implemented, what the tester verified, or what the reviewer flagged.
+2. **State your next step** — "Moving to task 3/5: [title]" or "Tester found 2 type errors, fixing now" or "All tasks complete, running post-execution review."
+
+NEVER respond with just "Excellent work" / "Nice implementation" after receiving delegated results.
+The user needs visibility into what's happening, not applause.
 </Style>`
 
 const BASE_PROMPT = readPromptMd(import.meta.url) ?? INLINE_PROMPT
