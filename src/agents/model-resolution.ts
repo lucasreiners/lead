@@ -25,12 +25,12 @@ const STRATEGIC_AGENTS: Set<LeadAgentName> = new Set([
 // Fallback chains (evaluated in order — first available wins)
 // ---------------------------------------------------------------------------
 
-/** Strategic tier: prefer Opus 4.6, fall back through capable models */
+/** Strategic tier: prefer Opus 4.8, fall back through capable models */
 export const STRATEGIC_MODEL_CHAIN: readonly string[] = [
+  "github-copilot/claude-opus-4.8",
+  "github-copilot/claude-opus-4.7",
   "github-copilot/claude-opus-4.6",
-  "github-copilot/claude-opus-4.5",
   "github-copilot/claude-sonnet-4.6",
-  "github-copilot/claude-sonnet-4.5",
   "anthropic/claude-opus-4",
   "anthropic/claude-sonnet-4",
   "github-copilot/gpt-5.4",

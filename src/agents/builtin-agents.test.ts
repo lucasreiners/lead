@@ -42,9 +42,9 @@ describe("createBuiltinAgents", () => {
 
   it("strategic agents default to Opus", () => {
     const agents = createBuiltinAgents()
-    expect(agents["tech-lead"]?.model).toBe("github-copilot/claude-opus-4.6")
-    expect(agents.architect?.model).toBe("github-copilot/claude-opus-4.6")
-    expect(agents["lead-dev"]?.model).toBe("github-copilot/claude-opus-4.6")
+    expect(agents["tech-lead"]?.model).toBe("github-copilot/claude-opus-4.8")
+    expect(agents.architect?.model).toBe("github-copilot/claude-opus-4.8")
+    expect(agents["lead-dev"]?.model).toBe("github-copilot/claude-opus-4.8")
   })
 
   it("engineering agents default to Sonnet", () => {
