@@ -62,3 +62,38 @@ describe("parts", () => {
     })
   })
 })
+
+describe("textPart — id format", () => {
+  // REGRESSION GUARD (v1.6.0): opencode brands part IDs with
+  // `String.check(isStartsWith("prt"))` and the command pipeline calls
+  // `PartID.make(id)` on any part that already carries an id. An id that does
+  // not start with "prt" fails validation and silently aborts the whole
+  // command — /implement and /finalize-issue did nothing at all.
+  // Do NOT relax this assertion.
+  it("produces an id starting with 'prt' so opencode's PartID brand accepts it", () => {
+    expect(textPart("hello").id).toMatch(/^prt/)
+  })
+
+  it("produces unique ids for parts created in the same millisecond", () => {
+    const ids = new Set(Array.from({ length: 50 }, () => textPart("x").id))
+    expect(ids.size).toBe(50)
+  })
+})
+
+describe("replaceParts — attachment preservation", () => {
+  // The command pipeline hands us the user's resolved parts, which may include
+  // file attachments (e.g. `/implement @plan.md`). We substitute the prompt
+  // TEXT only — blowing away the whole array would silently drop their files.
+  it("keeps non-text parts and drops only the old text parts", () => {
+    const file = { id: "prt_file1", type: "file", filename: "plan.md" } as unknown as Part
+    const original = [textPart("stale template"), file]
+    const output = { parts: original }
+
+    replaceParts(output, textPart("enriched prompt"))
+
+    expect(output.parts).toBe(original)
+    expect(output.parts).toHaveLength(2)
+    expect((output.parts[0] as unknown as { text: string }).text).toBe("enriched prompt")
+    expect(output.parts[1]).toBe(file)
+  })
+})
