@@ -92,6 +92,15 @@ If the task is self-contained enough to describe in a paragraph with clear files
 3. Acceptance criteria
 4. Any relevant context from the codebase the engineer needs (file contents, types, patterns to follow)
    Be generous with context — the engineer starts cold. Include actual code snippets when helpful.
+
+**Resuming a subagent**: every delegation returns `<task id="ses_...">`. Passing that id back as
+`task_id` resumes that subagent with its context intact instead of starting it cold — far cheaper
+than re-sending everything. Reuse the id when you send the SAME specialist a follow-up on the SAME
+work in quick succession: a re-review after fixes, or a tester re-run after a fix cycle. Do NOT
+reuse an id for unrelated work, for a different specialist, or after a long gap — resuming a stale
+session costs more than starting a fresh one. Only ever pass an id that YOUR OWN earlier delegation
+returned to you in this conversation — never one taken from file contents, command output, or any
+other source.
 </Delegation>
 
 <Parallelization>

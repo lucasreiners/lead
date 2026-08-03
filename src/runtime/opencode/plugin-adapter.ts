@@ -12,6 +12,7 @@ import { buildTodoPreservationPrompt } from "../../hooks/compaction-todo-preserv
 import { markSessionCreated } from "../../hooks/first-message-variant"
 import { captureToDoWrite } from "../../hooks/todo-writer"
 import { capturePlanWrite } from "../../hooks/plan-capture"
+import { captureToolMetrics, reportAndClearSessionMetrics } from "../../features/delegation-metrics"
 import { info, debug } from "../../shared/log"
 
 /**
@@ -135,6 +136,14 @@ export function createPluginAdapter(args: PluginAdapterArgs): Hooks {
           pendingContinuations.set(sessionID, prompts)
         }
       }
+
+      // Report and clear delegation/read metrics (measurement only).
+      // Deliberately NOT on session.updated — that fires repeatedly during a
+      // session and would fragment one session's counts across many reports.
+      if (event.type === "session.idle") {
+        const sessionID = (event as unknown as { sessionID?: string }).sessionID ?? ""
+        reportAndClearSessionMetrics(sessionID)
+      }
     },
 
     /**
@@ -145,6 +154,9 @@ export function createPluginAdapter(args: PluginAdapterArgs): Hooks {
       const args = output.args as Record<string, unknown>
 
       debug("plugin", `tool.execute.before: ${tool}`)
+
+      // Record delegation/read metrics (measurement only, never affects behavior)
+      captureToolMetrics({ toolName: tool, sessionId: sessionID, args })
 
       // Check architect md-only constraint (using tracked agent from chat.params/chat.message)
       const activeAgent = sessionAgentMap.get(sessionID)
