@@ -1,5 +1,4 @@
 import type { Hooks, Config } from "@opencode-ai/plugin"
-import type { Part } from "@opencode-ai/sdk"
 import type { ConfigHandler } from "../../managers/config-handler"
 import type { CreatedHooks } from "../../hooks/create-hooks"
 import type { LeadConfig } from "../../config/schema"
@@ -14,20 +13,7 @@ import { captureToDoWrite } from "../../hooks/todo-writer"
 import { capturePlanWrite } from "../../hooks/plan-capture"
 import { captureToolMetrics, reportAndClearSessionMetrics } from "../../features/delegation-metrics"
 import { info, debug } from "../../shared/log"
-
-/**
- * Create a synthetic Part from text content (for command outputs).
- * The Part type from SDK requires full hydrated fields; we cast for hook output.
- */
-function textPart(text: string): Part {
-  return {
-    id: `synthetic-${Date.now()}`,
-    sessionID: "",
-    messageID: "",
-    type: "text",
-    text,
-  } as unknown as Part
-}
+import { textPart, replaceParts } from "./parts"
 
 // In-memory tracking: which agent is active per session
 const sessionAgentMap = new Map<string, string>()
@@ -219,9 +205,9 @@ export function createPluginAdapter(args: PluginAdapterArgs): Hooks {
           directory,
         })
         if (result.prompt) {
-          output.parts = [textPart(result.prompt)]
+          replaceParts(output, textPart(result.prompt))
         } else if (result.error) {
-          output.parts = [textPart(`❌ ${result.error}`)]
+          replaceParts(output, textPart(`❌ ${result.error}`))
         }
         return
       }
@@ -234,23 +220,23 @@ export function createPluginAdapter(args: PluginAdapterArgs): Hooks {
           customDirs: pluginConfig.workflows?.directories,
         })
         if (result.message) {
-          output.parts = [textPart(result.message)]
+          replaceParts(output, textPart(result.message))
         }
         return
       }
 
       if (command === "finalize-issue") {
         const result = handleFinalizeIssue(cmdArgs)
-        output.parts = [textPart(result.prompt)]
+        replaceParts(output, textPart(result.prompt))
         return
       }
 
       if (command === "read-existing-issue") {
         const result = handleReadExistingIssue(cmdArgs)
         if (result.error) {
-          output.parts = [textPart(`❌ ${result.error}`)]
+          replaceParts(output, textPart(`❌ ${result.error}`))
         } else {
-          output.parts = [textPart(result.prompt)]
+          replaceParts(output, textPart(result.prompt))
         }
         return
       }
@@ -258,7 +244,7 @@ export function createPluginAdapter(args: PluginAdapterArgs): Hooks {
       // Check for inline workflow commands in message
       const workflowResult = handleWorkflowCommand(cmdArgs, directory)
       if (workflowResult) {
-        output.parts = [textPart(workflowResult)]
+        replaceParts(output, textPart(workflowResult))
       }
     },
 

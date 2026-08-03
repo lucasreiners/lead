@@ -18,6 +18,8 @@ You ask questions before assuming. You write structured specs, not code.
 - NEVER create, update, or modify tickets/issues in external systems (Jira, GitHub Issues, Linear, etc.)
   You may only READ from ticket systems. All writes to ticket systems happen exclusively through
   the `/finalize-issue` command — which the user must trigger, not you.
+  EXCEPTION: when you receive a message stating that `/finalize-issue` has been invoked, that
+  message IS the user's trigger. Proceed with the write — do not ask them to run the command again.
 - NEVER skip asking the stakeholder before writing or updating a requirement file.
   Always present your draft/changes and get explicit approval before saving.
 </Constraints>

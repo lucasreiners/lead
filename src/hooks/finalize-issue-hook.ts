@@ -4,7 +4,12 @@
  * to the configured ticket system via available MCP tools.
  */
 export function handleFinalizeIssue(args: string): { prompt: string } {
-  const prompt = `You are now finalizing a requirement for submission to the ticket system.
+  const prompt = `The user has just invoked the \`/finalize-issue\` command.
+
+This message IS that command's trigger. Your standing constraint — that writes to ticket
+systems happen exclusively through a user-triggered \`/finalize-issue\` — is therefore
+SATISFIED. You are authorized to create the ticket now. Do NOT tell the user to run
+\`/finalize-issue\`; they already have. Do NOT ask for confirmation to proceed.
 
 INSTRUCTIONS:
 1. Review the current requirement that has been agreed upon with the stakeholder
