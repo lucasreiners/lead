@@ -98,6 +98,51 @@ The researcher will look it up.`
   })
 })
 
+describe("buildAgent — category config", () => {
+  it("propagates a category-level variant to an agent in that category", () => {
+    const config: AgentConfig & { category?: string } = {
+      model: "gpt-4o",
+      description: "test",
+      category: "planning",
+    }
+    const result = buildAgent(config, "gpt-4o", {
+      categories: { planning: { variant: "high" } },
+    })
+    expect(result.variant).toBe("high")
+  })
+
+  it("resolves the category from the explicit option", () => {
+    const config: AgentConfig = { model: "gpt-4o", description: "test" }
+    const result = buildAgent(config, "gpt-4o", {
+      category: "planning",
+      categories: { planning: { variant: "high" } },
+    })
+    expect(result.variant).toBe("high")
+  })
+
+  it("prefers the explicit category option over a category on the config", () => {
+    const config: AgentConfig & { category?: string } = {
+      model: "gpt-4o",
+      description: "test",
+      category: "planning",
+    }
+    const result = buildAgent(config, "gpt-4o", {
+      category: "review",
+      categories: { planning: { variant: "low" }, review: { variant: "high" } },
+    })
+    expect(result.variant).toBe("high")
+  })
+
+  it("leaves config untouched when the category has no entry", () => {
+    const config: AgentConfig = { model: "gpt-4o", description: "test" }
+    const result = buildAgent(config, "gpt-4o", {
+      category: "planning",
+      categories: { review: { variant: "high" } },
+    })
+    expect("variant" in result).toBe(false)
+  })
+})
+
 describe("buildAgent — disabled agents", () => {
   it("strips disabled agent references from prompt", () => {
     const config: AgentConfig = {

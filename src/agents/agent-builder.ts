@@ -11,6 +11,12 @@ export type ResolveSkillsFn = (skillNames: string[], disabledSkills?: Set<string
 
 export interface BuildAgentOptions {
   categories?: CategoriesConfig
+  /**
+   * Category this agent belongs to. Builtin agents carry their category in
+   * `AGENT_METADATA` rather than on the emitted config, so it is passed in
+   * explicitly. Falls back to a `category` field on the config itself.
+   */
+  category?: string
   disabledSkills?: Set<string>
   resolveSkills?: ResolveSkillsFn
   disabledAgents?: Set<string>
@@ -104,23 +110,27 @@ export function stripDisabledAgentReferences(
 
 interface CategoryConfig {
   model?: string
+  variant?: string
   temperature?: number
   tools?: Record<string, boolean>
 }
 
 function applyCategoryConfig(
   base: AgentConfig,
-  categories: CategoriesConfig
+  categories: CategoriesConfig,
+  category?: string
 ): AgentConfig {
-  const category = (base as Record<string, unknown>)["category"] as string | undefined
-  if (!category) return base
+  const resolvedCategory =
+    category ?? ((base as Record<string, unknown>)["category"] as string | undefined)
+  if (!resolvedCategory) return base
 
-  const categoryConfig = categories[category] as CategoryConfig | undefined
+  const categoryConfig = categories[resolvedCategory] as CategoryConfig | undefined
   if (!categoryConfig) return base
 
   return {
     ...base,
     ...(categoryConfig.model !== undefined && { model: categoryConfig.model }),
+    ...(categoryConfig.variant !== undefined && { variant: categoryConfig.variant }),
     ...(categoryConfig.temperature !== undefined && { temperature: categoryConfig.temperature }),
     ...(categoryConfig.tools !== undefined && {
       tools: { ...(base.tools ?? {}), ...categoryConfig.tools },
@@ -154,7 +164,7 @@ export function buildAgent(
 
   // 2. Apply category overrides
   if (options?.categories) {
-    config = applyCategoryConfig(config, options.categories)
+    config = applyCategoryConfig(config, options.categories, options.category)
   }
 
   // 3. Prepend skill content

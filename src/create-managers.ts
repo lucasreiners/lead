@@ -50,6 +50,7 @@ export async function createManagers(options: CreateManagersOptions): Promise<Le
     buildOptions: {
       resolveSkills,
       disabledSkills,
+      categories: pluginConfig.categories ?? {},
     },
   })
 

@@ -201,6 +201,7 @@ export function createBuiltinAgents(
     let config = buildAgent(factory, resolvedModel, {
       ...buildOptions,
       disabledAgents,
+      category: AGENT_METADATA[name]?.category,
     })
 
     // Preserve the agent mode so OpenCode knows which are user-selectable
@@ -212,6 +213,7 @@ export function createBuiltinAgents(
       config = {
         ...config,
         ...(override.model !== undefined && { model: override.model }),
+        ...(override.variant !== undefined && { variant: override.variant }),
         ...(override.tools !== undefined && {
           tools: { ...(config.tools ?? {}), ...override.tools },
         }),

@@ -51,4 +51,34 @@ describe("mergeConfigs", () => {
     expect(result.continuation?.recovery?.compaction).toBe(true)
     expect(result.continuation?.idle?.enabled).toBe(true)
   })
+
+  it("project variant overrides user variant for the same agent key", () => {
+    const user = { agents: { lead: { variant: "low" } } }
+    const project = { agents: { lead: { variant: "high" } } }
+    const result = mergeConfigs(user, project)
+    expect(result.agents?.lead?.variant).toBe("high")
+  })
+
+  it("project variant overrides user variant for the same category key", () => {
+    const user = { categories: { engineering: { variant: "low" } } }
+    const project = { categories: { engineering: { variant: "high" } } }
+    const result = mergeConfigs(user, project)
+    expect(result.categories?.engineering?.variant).toBe("high")
+  })
+
+  it("user variant survives when project only sets a different field on the same agent", () => {
+    const user = { agents: { lead: { variant: "high" } } }
+    const project = { agents: { lead: { model: "claude-3-5-sonnet" } } }
+    const result = mergeConfigs(user, project)
+    expect(result.agents?.lead?.variant).toBe("high")
+    expect(result.agents?.lead?.model).toBe("claude-3-5-sonnet")
+  })
+
+  it("user variant survives when project only sets a different field on the same category", () => {
+    const user = { categories: { engineering: { variant: "high" } } }
+    const project = { categories: { engineering: { model: "gpt-4o" } } }
+    const result = mergeConfigs(user, project)
+    expect(result.categories?.engineering?.variant).toBe("high")
+    expect(result.categories?.engineering?.model).toBe("gpt-4o")
+  })
 })

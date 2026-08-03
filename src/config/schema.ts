@@ -8,6 +8,7 @@ const ToolPermissionMapSchema = z.record(z.string(), z.boolean())
 
 const AgentOverrideConfigSchema = z.object({
   model: z.string().optional(),
+  variant: z.string().optional(),
   skills: z.array(z.string()).optional(),
   tools: ToolPermissionMapSchema.optional(),
   display_name: z.string().optional(),
@@ -17,6 +18,7 @@ const CustomAgentConfigSchema = z.object({
   prompt: z.string().optional(),
   prompt_file: z.string().optional(),
   model: z.string().optional(),
+  variant: z.string().optional(),
   skills: z.array(z.string()).optional(),
   tools: ToolPermissionMapSchema.optional(),
   display_name: z.string().optional(),
@@ -38,6 +40,7 @@ const CustomAgentConfigSchema = z.object({
 
 const CategoryConfigSchema = z.object({
   model: z.string().optional(),
+  variant: z.string().optional(),
   skills: z.array(z.string()).optional(),
 })
 

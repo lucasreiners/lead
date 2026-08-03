@@ -60,4 +60,40 @@ describe("LeadConfigSchema", () => {
     })
     expect(result.$schema).toBe("https://lead.dev/schema.json")
   })
+
+  it("accepts variant on agents, custom_agents, and categories", () => {
+    const config = {
+      agents: {
+        lead: { model: "gpt-4o", variant: "high" },
+      },
+      custom_agents: {
+        "my-agent": { model: "claude-3-5-sonnet", variant: "low" },
+      },
+      categories: {
+        engineering: { model: "claude-3-5-sonnet", variant: "medium" },
+      },
+    }
+    const result = LeadConfigSchema.parse(config)
+    expect(result.agents?.lead?.variant).toBe("high")
+    expect(result.custom_agents?.["my-agent"]?.variant).toBe("low")
+    expect(result.categories?.engineering?.variant).toBe("medium")
+  })
+
+  it("rejects non-string variant", () => {
+    expect(() =>
+      LeadConfigSchema.parse({
+        agents: { lead: { variant: 123 } },
+      }),
+    ).toThrow()
+    expect(() =>
+      LeadConfigSchema.parse({
+        custom_agents: { "x": { variant: 123 } },
+      }),
+    ).toThrow()
+    expect(() =>
+      LeadConfigSchema.parse({
+        categories: { engineering: { variant: 123 } },
+      }),
+    ).toThrow()
+  })
 })

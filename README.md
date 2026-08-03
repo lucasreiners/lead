@@ -276,16 +276,36 @@ config takes precedence.
   // Disable specific hooks
   "disabled_hooks": ["verification-reminder"],
 
+  // Override model / variant for a specific builtin agent
+  "agents": {
+    "architect": {
+      "model": "anthropic/claude-opus-4-1",
+      "variant": "high"
+    }
+  },
+
+  // Apply a model / variant to every agent in a category
+  "categories": {
+    "planning": {
+      "variant": "high"
+    }
+  },
+
   // Add custom agents
   "custom_agents": {
     "my-agent": {
       "model": "anthropic/claude-sonnet-4-5",
+      "variant": "high",
       "prompt": "You are a specialized agent for...",
       "mode": "subagent"
     }
   }
 }
 ```
+
+`variant` maps to OpenCode's agent model variant (e.g. reasoning effort). It is available at all three levels —
+`agents.<name>`, `categories.<name>`, and `custom_agents.<name>` — and follows the same precedence as `model`: a
+per-agent `variant` overrides a category-level one. It only applies when using the agent's configured model.
 
 ## Build Process
 

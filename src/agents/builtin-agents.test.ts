@@ -65,6 +65,51 @@ describe("createBuiltinAgents", () => {
     expect(agents["code-analyst"]?.model).toBe("overridden-model")
   })
 
+  it("applies a per-agent variant override", () => {
+    const agents = createBuiltinAgents({
+      configOverrides: {
+        architect: { variant: "high" },
+      },
+    })
+    expect(agents.architect?.variant).toBe("high")
+  })
+
+  it("has no variant key when no override is provided", () => {
+    const agents = createBuiltinAgents()
+    expect("variant" in (agents.architect ?? {})).toBe(false)
+  })
+
+  it("applies a category-level variant to agents in that category", () => {
+    // architect is in the "planning" category (see AGENT_METADATA)
+    const agents = createBuiltinAgents({
+      buildOptions: { categories: { planning: { variant: "high" } } },
+    })
+    expect(agents.architect?.variant).toBe("high")
+  })
+
+  it("does not apply a category variant to agents outside that category", () => {
+    const agents = createBuiltinAgents({
+      buildOptions: { categories: { planning: { variant: "high" } } },
+    })
+    expect("variant" in (agents.reviewer ?? {})).toBe(false)
+  })
+
+  it("per-agent variant override beats a category-level variant", () => {
+    const agents = createBuiltinAgents({
+      buildOptions: { categories: { planning: { variant: "low" } } },
+      configOverrides: { architect: { variant: "high" } },
+    })
+    expect(agents.architect?.variant).toBe("high")
+  })
+
+  it("per-agent model override beats a category-level model", () => {
+    const agents = createBuiltinAgents({
+      buildOptions: { categories: { planning: { model: "category-model" } } },
+      configOverrides: { architect: { model: "agent-model" } },
+    })
+    expect(agents.architect?.model).toBe("agent-model")
+  })
+
   it("each agent has a description", () => {
     const agents = createBuiltinAgents()
     expect(agents["tech-lead"]?.description).toBe("Tech Lead")

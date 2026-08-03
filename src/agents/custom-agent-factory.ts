@@ -51,6 +51,7 @@ export function buildCustomAgent(
   const baseConfig: AgentConfig & { skills?: string[] } = {
     description: config.description ?? name,
     model: config.model,
+    variant: config.variant,
     mode: config.mode as AgentMode | undefined,
     prompt: promptText,
     tools: config.tools as Record<string, boolean> | undefined,
