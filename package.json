@@ -1,7 +1,7 @@
 {
   "name": "@lucasreiners/lead",
-  "version": "1.6.1",
-  "description": "L.E.A.D. (Lucas Engineering Automation & Delivery) \u2014 enterprise-grade OpenCode plugin with professional agent orchestration",
+  "version": "1.6.2",
+  "description": "L.E.A.D. (Lucas Engineering Automation & Delivery) — enterprise-grade OpenCode plugin with professional agent orchestration",
   "author": "L.E.A.D.",
   "license": "MIT",
   "main": "dist/index.js",
