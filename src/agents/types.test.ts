@@ -1,6 +1,5 @@
 import { describe, it, expect } from "bun:test"
-import { isFactory, isGptModel, type AgentFactory, type LeadAgentName } from "./types"
-import type { AgentConfig } from "@opencode-ai/sdk"
+import { isFactory, isGptModel, resolveModel, type AgentConfig, type LeadAgentName } from "./types"
 
 describe("isGptModel", () => {
   it("matches gpt- prefix", () => {
@@ -23,12 +22,12 @@ describe("isGptModel", () => {
 
 describe("isFactory", () => {
   it("returns true for factory function", () => {
-    const factory = Object.assign((model: string): AgentConfig => ({ model }), { mode: "subagent" as const })
+    const factory = Object.assign((model: string): AgentConfig => ({ model: resolveModel(model) }), { mode: "subagent" as const })
     expect(isFactory(factory)).toBe(true)
   })
 
   it("returns false for static AgentConfig", () => {
-    const config: AgentConfig = { model: "gpt-4o", description: "test" }
+    const config: AgentConfig = { model: resolveModel("openai/gpt-4o"), description: "test" }
     expect(isFactory(config)).toBe(false)
   })
 })

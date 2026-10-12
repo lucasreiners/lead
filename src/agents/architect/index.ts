@@ -1,4 +1,4 @@
-import type { AgentConfig } from "@opencode-ai/sdk"
+import { resolveModel, type AgentConfig } from "../types"
 import type { AgentFactory } from "../types"
 import { readPromptMd } from "../prompt-loader"
 
@@ -110,18 +110,19 @@ const BASE_PROMPT = readPromptMd(import.meta.url) ?? INLINE_PROMPT
 
 export const ARCHITECT_DEFAULTS: AgentConfig = {
   description: "Software Architect",
-  temperature: 1,
-  tools: {
-    bash: false,
-    edit: false,
-  },
+  request: { settings: {}, headers: {}, body: { temperature: 1 } },
+  permissions: [
+    { action: "shell", resource: "*", effect: "deny" },
+    { action: "edit", resource: "*", effect: "allow" },
+  ],
 }
 
 export const createArchitectAgent: AgentFactory = Object.assign(
   (model: string): AgentConfig => ({
     ...ARCHITECT_DEFAULTS,
-    model,
-    prompt: BASE_PROMPT,
+    mode: "subagent",
+    model: resolveModel(model),
+    system: BASE_PROMPT,
   }),
   { mode: "subagent" as const }
 )

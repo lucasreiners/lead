@@ -29,7 +29,7 @@ describe("LeadConfigSchema", () => {
       background: { max_concurrent: 3 },
       continuation: {
         recovery: { compaction: true },
-        idle: { enabled: true, work: true, workflow: false, todo_prompt: true },
+        idle: { enabled: true, work: true, workflow: false },
       },
       workflows: {
         disabled_workflows: ["old-workflow"],

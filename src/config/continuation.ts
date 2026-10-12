@@ -8,7 +8,6 @@ export interface ResolvedContinuationConfig {
     enabled: boolean
     work: boolean
     workflow: boolean
-    todo_prompt: boolean
   }
 }
 
@@ -20,7 +19,6 @@ const DEFAULTS: ResolvedContinuationConfig = {
     enabled: true,
     work: true,
     workflow: true,
-    todo_prompt: true,
   },
 }
 
@@ -37,7 +35,6 @@ export function resolveContinuationConfig(
       enabled: raw.idle?.enabled ?? DEFAULTS.idle.enabled,
       work: raw.idle?.work ?? DEFAULTS.idle.work,
       workflow: raw.idle?.workflow ?? DEFAULTS.idle.workflow,
-      todo_prompt: raw.idle?.todo_prompt ?? DEFAULTS.idle.todo_prompt,
     },
   }
 }

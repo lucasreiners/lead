@@ -1,7 +1,7 @@
-import type { AgentConfig } from "@opencode-ai/sdk"
+import type { AgentConfig } from "./types"
 import type { LeadAgentName, AgentFactory } from "./types"
 import type { BuildAgentOptions } from "./agent-builder"
-import { buildAgent } from "./agent-builder"
+import { buildAgent, applyAgentPreferences } from "./agent-builder"
 import type { AgentOverrideConfig } from "../config/schema"
 import { getDefaultModel } from "./model-resolution"
 import { createLeadAgent } from "./tech-lead/index"
@@ -169,7 +169,7 @@ export function getAllAgentMetadata(): Record<string, AgentMetadata> {
 // ---------------------------------------------------------------------------
 
 /**
- * Builds all 8 builtin agents, respecting disabled list, model overrides,
+ * Builds all 10 builtin agents, respecting disabled list, model overrides,
  * config overrides, and skill resolution options.
  *
  * Returns a record mapping agent names to their resolved `AgentConfig`.
@@ -202,6 +202,7 @@ export function createBuiltinAgents(
       ...buildOptions,
       disabledAgents,
       category: AGENT_METADATA[name]?.category,
+      skills: configOverrides[name]?.skills ?? buildOptions.skills,
     })
 
     // Preserve the agent mode so OpenCode knows which are user-selectable
@@ -210,14 +211,7 @@ export function createBuiltinAgents(
     // Apply config overrides if present
     const override = configOverrides[name]
     if (override) {
-      config = {
-        ...config,
-        ...(override.model !== undefined && { model: override.model }),
-        ...(override.variant !== undefined && { variant: override.variant }),
-        ...(override.tools !== undefined && {
-          tools: { ...(config.tools ?? {}), ...override.tools },
-        }),
-      }
+      config = applyAgentPreferences(config, override)
     }
 
     result[name] = config

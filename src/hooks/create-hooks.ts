@@ -12,12 +12,6 @@ import { handleStartImplementation } from "./start-implementation-hook"
 import { checkContinuation } from "./work-continuation"
 import { checkCompactionRecovery } from "./compaction-recovery"
 import { buildVerificationReminder } from "./verification-reminder"
-import { applyTodoDescriptionOverride } from "./todo-description-override"
-import { checkStaleTodos } from "./todo-continuation-enforcer"
-import {
-  buildTodoPreservationPrompt,
-} from "./compaction-todo-preserver"
-import { captureToDoWrite } from "./todo-writer"
 import { updateTokenState } from "./session-token-state"
 import type { LeadConfig } from "../config/schema"
 import type { ResolvedContinuationConfig } from "../config/continuation"
@@ -41,10 +35,6 @@ export interface CreatedHooks {
   checkContinuation: typeof checkContinuation
   checkCompactionRecovery: typeof checkCompactionRecovery
   buildVerificationReminder: typeof buildVerificationReminder
-  applyTodoDescriptionOverride: typeof applyTodoDescriptionOverride
-  checkStaleTodos: typeof checkStaleTodos
-  buildTodoPreservationPrompt: typeof buildTodoPreservationPrompt
-  captureToDoWrite: typeof captureToDoWrite
   updateTokenState: typeof updateTokenState
 }
 
@@ -57,15 +47,10 @@ function isHookEnabled(hookName: string, disabledHooks: string[]): boolean {
 
 /**
  * Create all hook instances, respecting disabled_hooks configuration.
- * Disabled hooks return null in the returned object.
+ * Disabled hooks use no-op implementations.
  */
 export function createHooks(args: CreateHooksArgs): CreatedHooks {
   const disabled = args.pluginConfig.disabled_hooks ?? []
-
-  // All hooks are pure functions — we return them conditionally
-  // (in a real implementation, disabled hooks would return no-op variants)
-  // For v0.1, we return all hooks but the plugin adapter checks disabled_hooks
-  const _ = isHookEnabled // used by plugin adapter
 
   return {
     checkContextWindow: isHookEnabled("context-window-monitor", disabled)
@@ -113,22 +98,6 @@ export function createHooks(args: CreateHooksArgs): CreatedHooks {
     buildVerificationReminder: isHookEnabled("verification-reminder", disabled)
       ? buildVerificationReminder
       : () => ({ reminderText: null }),
-
-    applyTodoDescriptionOverride: isHookEnabled("todo-description-override", disabled)
-      ? applyTodoDescriptionOverride
-      : (_tool: string, desc: string) => desc,
-
-    checkStaleTodos: isHookEnabled("todo-continuation", disabled)
-      ? checkStaleTodos
-      : () => ({ hasStale: false, prompt: null, staleTodos: [] }),
-
-    buildTodoPreservationPrompt: isHookEnabled("compaction-todo-preserver", disabled)
-      ? buildTodoPreservationPrompt
-      : () => null,
-
-    captureToDoWrite: isHookEnabled("todo-writer", disabled)
-      ? captureToDoWrite
-      : () => ({ captured: false }),
 
     updateTokenState: isHookEnabled("session-token-state", disabled)
       ? updateTokenState

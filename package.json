@@ -1,6 +1,6 @@
 {
   "name": "@lucasreiners/lead",
-  "version": "1.6.2",
+  "version": "2.0.0",
   "description": "L.E.A.D. (Lucas Engineering Automation & Delivery) — enterprise-grade OpenCode plugin with professional agent orchestration",
   "author": "L.E.A.D.",
   "license": "MIT",
@@ -24,11 +24,11 @@
     "build": "bun run script/build.ts && tsc --emitDeclarationOnly",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "test:v2-package": "bun run build && bun run script/smoke-v2.ts"
   },
   "dependencies": {
-    "@opencode-ai/plugin": "^1.18.11",
-    "@opencode-ai/sdk": "^1.18.11",
+    "@opencode/plugin": "^2.0.27",
     "jsonc-parser": "^3.3.1",
     "picocolors": "^1.1.1",
     "zod": "^4.4.3"

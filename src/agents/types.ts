@@ -1,4 +1,24 @@
-import type { AgentConfig } from "@opencode-ai/sdk"
+import { Model, type Agent } from "@opencode/plugin"
+
+/** Native registry fields; plugin preferences are resolved before registration. */
+export type AgentConfig = { -readonly [K in keyof Omit<Agent.Info, "id">]?: Agent.Info[K] }
+
+export function resolveModel(model: string, variant?: string): NonNullable<AgentConfig["model"]> {
+  const ref = Model.Ref.parse(model)
+  return variant ? { ...ref, variant: Model.VariantID.make(variant) } : ref
+}
+
+/** Resolve lead.jsonc tool preferences into ordered native permission rules. */
+export function toolPermissions(tools: Record<string, boolean>): NonNullable<AgentConfig["permissions"]> {
+  const aliases: Record<string, string> = { write: "edit", patch: "edit" }
+  const actions = new Map<string, boolean>()
+  for (const [name, enabled] of Object.entries(tools)) {
+    const action = Object.hasOwn(aliases, name) ? aliases[name]! : name
+    // A denied edit alias must not be re-enabled by another alias in the same preference map.
+    actions.set(action, (actions.get(action) ?? true) && enabled)
+  }
+  return [...actions].map(([action, enabled]) => ({ action, resource: "*", effect: enabled ? "allow" : "deny" }))
+}
 
 // ---------------------------------------------------------------------------
 // L.E.A.D. agent names
@@ -78,9 +98,3 @@ export function isGptModel(model: string): boolean {
   const lower = model.toLowerCase()
   return lower.includes("gpt-") || lower.includes("o1") || lower.includes("o3") || lower.includes("o4")
 }
-
-// ---------------------------------------------------------------------------
-// Re-export AgentConfig for convenience
-// ---------------------------------------------------------------------------
-
-export type { AgentConfig }

@@ -1,9 +1,9 @@
 import type { LoadedSkill, SkillLoadResult } from "./types"
-import { fetchSkillsFromApi } from "./opencode-client"
 import { discoverSkillsFromDirs } from "./discovery"
 
 export interface LoadSkillsOptions {
-  serverUrl?: URL | string
+  /** Use the host's authenticated, location-scoped V2 skill catalog. */
+  fetchSkills?: () => Promise<LoadedSkill[]>
   projectDirectory: string
   customDirs?: string[]
   disabledSkills?: string[]
@@ -11,14 +11,14 @@ export interface LoadSkillsOptions {
 
 /**
  * Orchestrate skill loading:
- * 1. Try OpenCode API (serverUrl/skill endpoint)
+ * 1. Read the host's skill catalog
  * 2. Fallback to filesystem discovery
  * 3. Deduplicate by name (API wins)
  * 4. Filter disabled skills
  */
 export async function loadSkills(options: LoadSkillsOptions): Promise<SkillLoadResult> {
   const {
-    serverUrl,
+    fetchSkills,
     projectDirectory,
     customDirs = [],
     disabledSkills = [],
@@ -29,9 +29,9 @@ export async function loadSkills(options: LoadSkillsOptions): Promise<SkillLoadR
 
   // Step 1: Try API
   let apiSkills: LoadedSkill[] = []
-  if (serverUrl) {
+  if (fetchSkills) {
     try {
-      apiSkills = await fetchSkillsFromApi(serverUrl, projectDirectory)
+      apiSkills = await fetchSkills()
     } catch (err) {
       errors.push(`API skill fetch failed: ${String(err)}`)
     }

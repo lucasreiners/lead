@@ -1,10 +1,10 @@
 import { readFileSync } from "fs"
-import type { AgentConfig } from "@opencode-ai/sdk"
-import type { AgentMode } from "./types"
+import type { AgentConfig } from "./types"
 import type { CustomAgentConfig } from "../config/schema"
 import type { AgentMetadata } from "./builtin-agents"
 import type { BuildAgentOptions } from "./agent-builder"
-import { buildAgent } from "./agent-builder"
+import { buildAgent, applyAgentPreferences } from "./agent-builder"
+import { getDefaultModel } from "./model-resolution"
 import { resolveSafePath } from "../shared/resolve-safe-path"
 
 // ---------------------------------------------------------------------------
@@ -48,15 +48,14 @@ export function buildCustomAgent(
     }
   }
 
-  const baseConfig: AgentConfig & { skills?: string[] } = {
+  const baseConfig = applyAgentPreferences({
     description: config.description ?? name,
-    model: config.model,
-    variant: config.variant,
-    mode: config.mode as AgentMode | undefined,
+    mode: config.mode ?? "subagent",
+  }, {
+    ...config,
+    model: options.buildOptions?.model ?? config.model ?? (config.variant ? getDefaultModel(name) : undefined),
     prompt: promptText,
-    tools: config.tools as Record<string, boolean> | undefined,
-    skills: config.skills,
-  }
+  })
 
   // Strip undefined values
   for (const key of Object.keys(baseConfig) as (keyof typeof baseConfig)[]) {
@@ -67,6 +66,7 @@ export function buildCustomAgent(
 
   return buildAgent(baseConfig, options.buildOptions?.model ?? config.model ?? "", {
     ...options,
+    skills: config.skills,
     disabledAgents: options.disabledAgents,
     resolveSkills: options.resolveSkills,
     disabledSkills: options.disabledSkills,

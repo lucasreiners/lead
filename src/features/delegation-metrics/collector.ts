@@ -28,7 +28,7 @@ function getOrCreateSession(sessionID: string): InternalSessionState {
       if (!oldest.done) sessions.delete(oldest.value)
     }
     state = {
-      // Null-prototype: `subagent_type` is model-supplied and is used as a key.
+      // Null-prototype: `agent` is model-supplied and is used as a key.
       // A plain `{}` would make `"__proto__" in buckets` (and `toString`, etc.)
       // report true for inherited keys, so those counts would silently vanish.
       delegation: { totalCalls: 0, countBySubagent: Object.create(null) as Record<string, number>, resumedCalls: 0 },
@@ -43,15 +43,15 @@ function getOrCreateSession(sessionID: string): InternalSessionState {
 }
 
 /**
- * Record a `task` tool invocation for delegation metrics.
+ * Record a `subagent` tool invocation for delegation metrics.
  * Never throws — failures are swallowed so metrics collection can never
  * break a real tool call.
  */
 export function recordDelegation(sessionID: string, args: Record<string, unknown>): void {
   try {
     const state = getOrCreateSession(sessionID)
-    const raw = typeof args["subagent_type"] === "string" ? (args["subagent_type"] as string) : "unknown"
-    // `subagent_type` is model-supplied: truncate and bucket-limit it so a
+    const raw = typeof args["agent"] === "string" ? (args["agent"] as string) : "unknown"
+    // `agent` is model-supplied: truncate and bucket-limit it so a
     // misbehaving or hostile caller cannot grow this map without bound.
     const truncated = raw.slice(0, MAX_LABEL_LENGTH)
     const buckets = state.delegation.countBySubagent
@@ -59,13 +59,13 @@ export function recordDelegation(sessionID: string, args: Record<string, unknown
     // MAX_SUBAGENT_BUCKETS. Existing keys always increment normally.
     // Use an own-property check, not `in` — see the null-prototype note above.
     const isExisting = Object.prototype.hasOwnProperty.call(buckets, truncated)
-    const subagentType =
+    const agent =
       isExisting || Object.keys(buckets).length < MAX_SUBAGENT_BUCKETS - 1 ? truncated : "other"
-    const hasTaskId = typeof args["task_id"] === "string" && args["task_id"].length > 0
+    const hasSessionID = typeof args["sessionID"] === "string" && args["sessionID"].length > 0
 
     state.delegation.totalCalls += 1
-    state.delegation.countBySubagent[subagentType] = (state.delegation.countBySubagent[subagentType] ?? 0) + 1
-    if (hasTaskId) {
+    state.delegation.countBySubagent[agent] = (state.delegation.countBySubagent[agent] ?? 0) + 1
+    if (hasSessionID) {
       state.delegation.resumedCalls += 1
     }
   } catch {
@@ -75,15 +75,15 @@ export function recordDelegation(sessionID: string, args: Record<string, unknown
 
 /**
  * Record a `read` or `grep` tool invocation for read metrics.
- * Extracts the target path from args (`filePath` for read, `path` for grep),
+ * Extracts the target path from args (`path` for both tools),
  * handling a missing path gracefully. Never throws.
  */
-export function recordRead(sessionID: string, tool: string, args: Record<string, unknown>): void {
+export function recordRead(sessionID: string, _tool: string, args: Record<string, unknown>): void {
   try {
     const state = getOrCreateSession(sessionID)
     state.readTotalCalls += 1
 
-    const rawPath = tool === "read" ? args["filePath"] : args["path"]
+    const rawPath = args["path"]
     if (typeof rawPath !== "string" || rawPath.length === 0) {
       state.pathlessReads += 1
       return

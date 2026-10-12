@@ -6,9 +6,9 @@ describe("recordDelegation", () => {
   afterEach(() => resetAllSessions())
 
   it("counts total calls and per-subagent counts", () => {
-    recordDelegation("s1", { description: "d", prompt: "p", subagent_type: "engineer" })
-    recordDelegation("s1", { description: "d", prompt: "p", subagent_type: "engineer" })
-    recordDelegation("s1", { description: "d", prompt: "p", subagent_type: "reviewer" })
+    recordDelegation("s1", { description: "d", prompt: "p", agent: "engineer" })
+    recordDelegation("s1", { description: "d", prompt: "p", agent: "engineer" })
+    recordDelegation("s1", { description: "d", prompt: "p", agent: "reviewer" })
 
     const snapshot = peekSessionMetrics("s1")
     expect(snapshot).toBeDefined()
@@ -16,25 +16,25 @@ describe("recordDelegation", () => {
     expect(snapshot!.delegation.countBySubagent).toEqual({ engineer: 2, reviewer: 1 })
   })
 
-  it("counts resumed calls when task_id is supplied", () => {
-    recordDelegation("s2", { description: "d", prompt: "p", subagent_type: "engineer" })
-    recordDelegation("s2", { description: "d", prompt: "p", subagent_type: "engineer", task_id: "t1" })
-    recordDelegation("s2", { description: "d", prompt: "p", subagent_type: "engineer", task_id: "t2" })
+  it("counts resumed calls when sessionID is supplied", () => {
+    recordDelegation("s2", { description: "d", prompt: "p", agent: "engineer" })
+    recordDelegation("s2", { description: "d", prompt: "p", agent: "engineer", sessionID: "child-1" })
+    recordDelegation("s2", { description: "d", prompt: "p", agent: "engineer", sessionID: "child-2" })
 
     const snapshot = peekSessionMetrics("s2")
     expect(snapshot!.delegation.resumedCalls).toBe(2)
     expect(snapshot!.delegation.totalCalls).toBe(3)
   })
 
-  it("falls back to 'unknown' when subagent_type is missing or not a string", () => {
-    recordDelegation("s3", { description: "d", prompt: "p", subagent_type: 123 as unknown as string })
+  it("falls back to 'unknown' when agent is missing or not a string", () => {
+    recordDelegation("s3", { description: "d", prompt: "p", agent: 123 as unknown as string })
     const snapshot = peekSessionMetrics("s3")
     expect(snapshot!.delegation.countBySubagent).toEqual({ unknown: 1 })
   })
 
   it("keeps sessions isolated from each other", () => {
-    recordDelegation("s4", { description: "d", prompt: "p", subagent_type: "engineer" })
-    recordDelegation("s5", { description: "d", prompt: "p", subagent_type: "reviewer" })
+    recordDelegation("s4", { description: "d", prompt: "p", agent: "engineer" })
+    recordDelegation("s5", { description: "d", prompt: "p", agent: "reviewer" })
 
     expect(peekSessionMetrics("s4")!.delegation.totalCalls).toBe(1)
     expect(peekSessionMetrics("s5")!.delegation.totalCalls).toBe(1)
@@ -45,10 +45,10 @@ describe("recordDelegation", () => {
 describe("recordRead", () => {
   afterEach(() => resetAllSessions())
 
-  it("extracts filePath for read tool", () => {
-    recordRead("s1", "read", { filePath: "/a.ts" })
-    recordRead("s1", "read", { filePath: "/b.ts" })
-    recordRead("s1", "read", { filePath: "/a.ts" })
+  it("extracts path for read tool", () => {
+    recordRead("s1", "read", { path: "/a.ts" })
+    recordRead("s1", "read", { path: "/b.ts" })
+    recordRead("s1", "read", { path: "/a.ts" })
 
     const snapshot = peekSessionMetrics("s1")!
     expect(snapshot.reads.totalCalls).toBe(3)
@@ -78,7 +78,7 @@ describe("recordRead", () => {
 
   it("caps the number of distinct tracked paths", () => {
     for (let i = 0; i < MAX_TRACKED_PATHS + 10; i++) {
-      recordRead("s4", "read", { filePath: `/file-${i}.ts` })
+      recordRead("s4", "read", { path: `/file-${i}.ts` })
     }
 
     const snapshot = peekSessionMetrics("s4")!
@@ -96,7 +96,7 @@ describe("peekSessionMetrics / takeSessionMetrics", () => {
   })
 
   it("peek does not clear state, take does", () => {
-    recordDelegation("s1", { description: "d", prompt: "p", subagent_type: "engineer" })
+    recordDelegation("s1", { description: "d", prompt: "p", agent: "engineer" })
 
     expect(peekSessionMetrics("s1")).toBeDefined()
     expect(peekSessionMetrics("s1")).toBeDefined() // still there
@@ -108,7 +108,7 @@ describe("peekSessionMetrics / takeSessionMetrics", () => {
   })
 
   it("does not mutate internal state through the returned snapshot", () => {
-    recordDelegation("s1", { description: "d", prompt: "p", subagent_type: "engineer" })
+    recordDelegation("s1", { description: "d", prompt: "p", agent: "engineer" })
     const snapshot = peekSessionMetrics("s1")!
     snapshot.delegation.countBySubagent["engineer"] = 999
 
@@ -122,7 +122,7 @@ describe("session eviction cap", () => {
 
   it("evicts the oldest session once MAX_TRACKED_SESSIONS is reached", () => {
     for (let i = 0; i < MAX_TRACKED_SESSIONS + 5; i++) {
-      recordDelegation(`session-${i}`, { description: "d", prompt: "p", subagent_type: "engineer" })
+      recordDelegation(`session-${i}`, { description: "d", prompt: "p", agent: "engineer" })
     }
 
     // The oldest sessions should have been evicted.
@@ -142,41 +142,41 @@ describe("session eviction cap", () => {
   })
 })
 
-describe("subagent_type label truncation", () => {
+describe("agent label truncation", () => {
   afterEach(() => resetAllSessions())
 
-  it("truncates an over-long subagent_type to MAX_LABEL_LENGTH", () => {
-    const longType = "x".repeat(MAX_LABEL_LENGTH + 20)
-    recordDelegation("s1", { description: "d", prompt: "p", subagent_type: longType })
+  it("truncates an over-long agent to MAX_LABEL_LENGTH", () => {
+    const longAgent = "x".repeat(MAX_LABEL_LENGTH + 20)
+    recordDelegation("s1", { description: "d", prompt: "p", agent: longAgent })
 
     const snapshot = peekSessionMetrics("s1")!
     const keys = Object.keys(snapshot.delegation.countBySubagent)
     expect(keys).toHaveLength(1)
     expect(keys[0]).toHaveLength(MAX_LABEL_LENGTH)
-    expect(keys[0]).toBe(longType.slice(0, MAX_LABEL_LENGTH))
+    expect(keys[0]).toBe(longAgent.slice(0, MAX_LABEL_LENGTH))
   })
 })
 
 describe("subagent bucket overflow", () => {
   afterEach(() => resetAllSessions())
 
-  it("folds new distinct subagent_types into 'other' once the bucket cap is hit, without exceeding MAX_SUBAGENT_BUCKETS", () => {
+  it("folds new distinct agents into 'other' once the bucket cap is hit, without exceeding MAX_SUBAGENT_BUCKETS", () => {
     // Fill up to MAX_SUBAGENT_BUCKETS - 1 distinct named buckets.
     for (let i = 0; i < MAX_SUBAGENT_BUCKETS - 1; i++) {
-      recordDelegation("s1", { description: "d", prompt: "p", subagent_type: `type-${i}` })
+      recordDelegation("s1", { description: "d", prompt: "p", agent: `agent-${i}` })
     }
 
     let snapshot = peekSessionMetrics("s1")!
     expect(Object.keys(snapshot.delegation.countBySubagent)).toHaveLength(MAX_SUBAGENT_BUCKETS - 1)
 
-    // Any new distinct type should now be folded into "other".
-    recordDelegation("s1", { description: "d", prompt: "p", subagent_type: "brand-new-type" })
+    // Any new distinct agent should now be folded into "other".
+    recordDelegation("s1", { description: "d", prompt: "p", agent: "brand-new-agent" })
     snapshot = peekSessionMetrics("s1")!
     expect(snapshot.delegation.countBySubagent["other"]).toBe(1)
-    expect(snapshot.delegation.countBySubagent["brand-new-type"]).toBeUndefined()
+    expect(snapshot.delegation.countBySubagent["brand-new-agent"]).toBeUndefined()
 
-    // Another distinct type also folds into "other", not a new bucket.
-    recordDelegation("s1", { description: "d", prompt: "p", subagent_type: "another-new-type" })
+    // Another distinct agent also folds into "other", not a new bucket.
+    recordDelegation("s1", { description: "d", prompt: "p", agent: "another-new-agent" })
     snapshot = peekSessionMetrics("s1")!
     expect(snapshot.delegation.countBySubagent["other"]).toBe(2)
 
@@ -186,17 +186,17 @@ describe("subagent bucket overflow", () => {
 
   it("still increments an existing bucket normally after the cap is reached", () => {
     for (let i = 0; i < MAX_SUBAGENT_BUCKETS - 1; i++) {
-      recordDelegation("s1", { description: "d", prompt: "p", subagent_type: `type-${i}` })
+      recordDelegation("s1", { description: "d", prompt: "p", agent: `agent-${i}` })
     }
-    // Push past the cap with new distinct types (folded into "other").
-    recordDelegation("s1", { description: "d", prompt: "p", subagent_type: "overflow-1" })
-    recordDelegation("s1", { description: "d", prompt: "p", subagent_type: "overflow-2" })
+    // Push past the cap with new distinct agents (folded into "other").
+    recordDelegation("s1", { description: "d", prompt: "p", agent: "overflow-1" })
+    recordDelegation("s1", { description: "d", prompt: "p", agent: "overflow-2" })
 
-    // A pre-existing type (recorded before the cap was hit) still increments its own bucket.
-    recordDelegation("s1", { description: "d", prompt: "p", subagent_type: "type-0" })
+    // A pre-existing agent (recorded before the cap was hit) still increments its own bucket.
+    recordDelegation("s1", { description: "d", prompt: "p", agent: "agent-0" })
 
     const snapshot = peekSessionMetrics("s1")!
-    expect(snapshot.delegation.countBySubagent["type-0"]).toBe(2)
+    expect(snapshot.delegation.countBySubagent["agent-0"]).toBe(2)
     expect(snapshot.delegation.countBySubagent["other"]).toBe(2)
     expect(Object.keys(snapshot.delegation.countBySubagent).length).toBeLessThanOrEqual(MAX_SUBAGENT_BUCKETS)
   })
@@ -206,9 +206,9 @@ describe("untrackedPathReads", () => {
   afterEach(() => resetAllSessions())
 
   it("is 0 when distinct paths stay under the cap", () => {
-    recordRead("s1", "read", { filePath: "/a.ts" })
-    recordRead("s1", "read", { filePath: "/b.ts" })
-    recordRead("s1", "read", { filePath: "/a.ts" })
+    recordRead("s1", "read", { path: "/a.ts" })
+    recordRead("s1", "read", { path: "/b.ts" })
+    recordRead("s1", "read", { path: "/a.ts" })
 
     const snapshot = peekSessionMetrics("s1")!
     expect(snapshot.reads.untrackedPathReads).toBe(0)
@@ -218,15 +218,15 @@ describe("untrackedPathReads", () => {
   it("becomes non-zero once distinct paths exceed MAX_TRACKED_PATHS, while duplicateReads stays correct", () => {
     // Fill up to the cap with distinct paths.
     for (let i = 0; i < MAX_TRACKED_PATHS; i++) {
-      recordRead("s1", "read", { filePath: `/file-${i}.ts` })
+      recordRead("s1", "read", { path: `/file-${i}.ts` })
     }
     // These new distinct paths exceed the cap and are not tracked.
-    recordRead("s1", "read", { filePath: "/overflow-1.ts" })
-    recordRead("s1", "read", { filePath: "/overflow-2.ts" })
-    recordRead("s1", "read", { filePath: "/overflow-3.ts" })
+    recordRead("s1", "read", { path: "/overflow-1.ts" })
+    recordRead("s1", "read", { path: "/overflow-2.ts" })
+    recordRead("s1", "read", { path: "/overflow-3.ts" })
 
     // Duplicate reads of an already-tracked path still count correctly.
-    recordRead("s1", "read", { filePath: "/file-0.ts" })
+    recordRead("s1", "read", { path: "/file-0.ts" })
 
     const snapshot = peekSessionMetrics("s1")!
     expect(snapshot.reads.distinctPaths).toBe(MAX_TRACKED_PATHS)
@@ -239,11 +239,11 @@ describe("untrackedPathReads", () => {
 describe("collector — hostile key handling", () => {
   afterEach(() => resetAllSessions())
 
-  it("counts prototype-shadowing subagent_type values as real buckets", () => {
+  it("counts prototype-shadowing agent values as real buckets", () => {
     // A plain `{}` would make `"__proto__" in buckets` true via the prototype
     // chain, so these increments would silently vanish.
     for (const name of ["__proto__", "constructor", "toString"]) {
-      recordDelegation("s1", { description: "d", prompt: "p", subagent_type: name })
+      recordDelegation("s1", { description: "d", prompt: "p", agent: name })
     }
 
     const snapshot = peekSessionMetrics("s1")!
@@ -255,7 +255,7 @@ describe("collector — hostile key handling", () => {
 
   it("keeps bucket totals consistent with totalCalls", () => {
     for (const name of ["__proto__", "engineer", "engineer", "toString"]) {
-      recordDelegation("s1", { description: "d", prompt: "p", subagent_type: name })
+      recordDelegation("s1", { description: "d", prompt: "p", agent: name })
     }
     const snapshot = peekSessionMetrics("s1")!
     const summed = Object.values(snapshot.delegation.countBySubagent).reduce((a, b) => a + b, 0)
@@ -268,8 +268,8 @@ describe("recordRead — pathless calls", () => {
 
   it("counts read/grep calls with no usable path separately", () => {
     recordRead("s1", "grep", { pattern: "x" })
-    recordRead("s1", "read", { filePath: "" })
-    recordRead("s1", "read", { filePath: "/a.ts" })
+    recordRead("s1", "read", { path: "" })
+    recordRead("s1", "read", { path: "/a.ts" })
 
     const snapshot = peekSessionMetrics("s1")!
     expect(snapshot.reads.totalCalls).toBe(3)

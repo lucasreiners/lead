@@ -24,10 +24,6 @@ describe("createHooks", () => {
     expect(typeof hooks.checkContinuation).toBe("function")
     expect(typeof hooks.checkCompactionRecovery).toBe("function")
     expect(typeof hooks.buildVerificationReminder).toBe("function")
-    expect(typeof hooks.applyTodoDescriptionOverride).toBe("function")
-    expect(typeof hooks.checkStaleTodos).toBe("function")
-    expect(typeof hooks.buildTodoPreservationPrompt).toBe("function")
-    expect(typeof hooks.captureToDoWrite).toBe("function")
     expect(typeof hooks.updateTokenState).toBe("function")
   })
 
