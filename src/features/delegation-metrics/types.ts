@@ -1,4 +1,4 @@
-/** Per-session delegation (task tool) metrics. */
+/** Per-session delegation (subagent tool) metrics. */
 export interface DelegationMetrics {
   totalCalls: number
   countBySubagent: Record<string, number>

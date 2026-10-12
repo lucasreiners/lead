@@ -44,7 +44,8 @@ export function clearWorkState(dir: string): void {
 }
 
 /**
- * Count plan checkboxes in a markdown plan file.
+ * Count task checkboxes in ## Progress, ignoring detailed/verification checklists.
+ * Older plans without that section retain their existing checklist format.
  * Returns PlanProgress with total, completed, and isComplete.
  */
 export function getPlanProgress(planPath: string): PlanProgress {
@@ -54,8 +55,35 @@ export function getPlanProgress(planPath: string): PlanProgress {
 
   try {
     const content = readFileSync(planPath, "utf-8")
-    const unchecked = (content.match(/- \[ \]/g) ?? []).length
-    const checked = (content.match(/- \[x\]/gi) ?? []).length
+    // Fenced examples are not task status (including headings inside examples).
+    let fence: string | undefined
+    const lines = content.split(/\r?\n/).filter((line) => {
+      const marker = line.match(/^\s{0,3}(`{3,}|~{3,})/)
+      if (fence) {
+        if (marker && marker[1]![0] === fence[0] && marker[1]!.length >= fence.length && line.trim() === marker[1]) {
+          fence = undefined
+        }
+        return false
+      }
+      if (marker) {
+        fence = marker[1]
+        return false
+      }
+      return true
+    })
+    const progressStart = lines.findIndex((line) => /^\s{0,3}##[ \t]+Progress(?:[ \t]+#+)?[ \t]*$/i.test(line))
+    let taskLines = lines
+    if (progressStart !== -1) {
+      const afterHeading = lines.slice(progressStart + 1)
+      const nextSection = afterHeading.findIndex((line) => /^\s{0,3}#{1,2}(?:[ \t]+|$)/.test(line))
+      taskLines = nextSection === -1 ? afterHeading : afterHeading.slice(0, nextSection)
+    }
+    const checkboxes = taskLines.flatMap((line) => {
+      const match = line.match(/^\s*-\s+\[([ x])\](?:\s+|$)/i)
+      return match ? [match[1]!.toLowerCase()] : []
+    })
+    const unchecked = checkboxes.filter((status) => status === " ").length
+    const checked = checkboxes.filter((status) => status === "x").length
     const total = unchecked + checked
 
     return {

@@ -1,4 +1,4 @@
-import type { AgentConfig } from "@opencode-ai/sdk"
+import { resolveModel, type AgentConfig } from "../types"
 import type { AgentFactory } from "../types"
 import { readPromptMd } from "../prompt-loader"
 import { buildDynamicLeadPrompt, BUILTIN_AGENT_DISPLAY, type AvailableAgent } from "../dynamic-prompt-builder"
@@ -48,8 +48,9 @@ Examples of when NOT to ask:
 - Route review tasks to the reviewer
 - Route security concerns to the guardian
 - For simple single-step tasks, handle them directly
-- Reuse a subagent instead of restarting it: every delegation returns \`<task id="ses_...">\`, and
-  passing that id back as \`task_id\` resumes that specialist with its context intact. Do this for
+- Delegate with the native \`subagent\` tool, setting \`agent\` to the specialist ID.
+- Reuse a subagent instead of restarting it: pass the returned \`sessionID\` to the
+  \`subagent\` tool to resume that specialist with its context intact. Do this for
   fast follow-ups to the SAME specialist on the SAME work. Do not reuse an id across different
   specialists, for unrelated work, or after a long gap — a stale session costs more to resume
   than a fresh one costs to start. Only pass an id that your own earlier delegation returned in
@@ -105,12 +106,11 @@ const BASE_PROMPT = readPromptMd(import.meta.url) ?? INLINE_PROMPT
 
 export const LEAD_DEFAULTS: AgentConfig = {
   description: "Tech Lead",
-  temperature: 1,
-  tools: {
-    bash: false,
-    edit: false,
-    write: false,
-  },
+  request: { settings: {}, headers: {}, body: { temperature: 1 } },
+  permissions: [
+    { action: "shell", resource: "*", effect: "deny" },
+    { action: "edit", resource: "*", effect: "deny" },
+  ],
 }
 
 export interface CreateLeadAgentOptions {
@@ -141,8 +141,9 @@ export function createLeadAgentWithOptions(
 
   return {
     ...LEAD_DEFAULTS,
-    model,
-    prompt: fullPrompt,
+    mode: "primary",
+    model: resolveModel(model),
+    system: fullPrompt,
   }
 }
 

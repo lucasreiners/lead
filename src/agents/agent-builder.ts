@@ -1,6 +1,6 @@
-import type { AgentConfig } from "@opencode-ai/sdk"
-import type { AgentSource, AgentMode } from "./types"
-import { isFactory } from "./types"
+import type { AgentConfig, AgentSource } from "./types"
+import { isFactory, resolveModel, toolPermissions } from "./types"
+import { Model } from "@opencode/plugin"
 import type { CategoriesConfig } from "../config/schema"
 
 // ---------------------------------------------------------------------------
@@ -14,9 +14,10 @@ export interface BuildAgentOptions {
   /**
    * Category this agent belongs to. Builtin agents carry their category in
    * `AGENT_METADATA` rather than on the emitted config, so it is passed in
-   * explicitly. Falls back to a `category` field on the config itself.
+   * explicitly.
    */
   category?: string
+  skills?: string[]
   disabledSkills?: Set<string>
   resolveSkills?: ResolveSkillsFn
   disabledAgents?: Set<string>
@@ -108,32 +109,35 @@ export function stripDisabledAgentReferences(
 // Category config application
 // ---------------------------------------------------------------------------
 
-interface CategoryConfig {
+export interface AgentPreferences {
   model?: string
   variant?: string
   temperature?: number
   tools?: Record<string, boolean>
+  prompt?: string
 }
 
-function applyCategoryConfig(
+export function applyAgentPreferences(
   base: AgentConfig,
-  categories: CategoriesConfig,
-  category?: string
+  preferences: AgentPreferences
 ): AgentConfig {
-  const resolvedCategory =
-    category ?? ((base as Record<string, unknown>)["category"] as string | undefined)
-  if (!resolvedCategory) return base
-
-  const categoryConfig = categories[resolvedCategory] as CategoryConfig | undefined
-  if (!categoryConfig) return base
-
+  const model = preferences.model
+    ? resolveModel(preferences.model)
+    : base.model
+  const variant = preferences.variant ?? model?.variant ?? base.model?.variant
   return {
     ...base,
-    ...(categoryConfig.model !== undefined && { model: categoryConfig.model }),
-    ...(categoryConfig.variant !== undefined && { variant: categoryConfig.variant }),
-    ...(categoryConfig.temperature !== undefined && { temperature: categoryConfig.temperature }),
-    ...(categoryConfig.tools !== undefined && {
-      tools: { ...(base.tools ?? {}), ...categoryConfig.tools },
+    ...(model && { model: variant ? { ...model, variant: Model.VariantID.make(variant) } : model }),
+    ...(preferences.prompt !== undefined && { system: preferences.prompt }),
+    ...(preferences.temperature !== undefined && {
+      request: {
+        settings: base.request?.settings ?? {},
+        headers: base.request?.headers ?? {},
+        body: { ...base.request?.body, temperature: preferences.temperature },
+      },
+    }),
+    ...(preferences.tools !== undefined && {
+      permissions: [...(base.permissions ?? []), ...toolPermissions(preferences.tools)],
     }),
   }
 }
@@ -163,22 +167,23 @@ export function buildAgent(
     : { ...source }
 
   // 2. Apply category overrides
-  if (options?.categories) {
-    config = applyCategoryConfig(config, options.categories, options.category)
+  const category = options?.category ? options.categories?.[options.category] : undefined
+  if (category) {
+    config = applyAgentPreferences(config, category)
   }
 
   // 3. Prepend skill content
-  const skills = (config as Record<string, unknown>)["skills"] as string[] | undefined
+  const skills = options?.skills ?? category?.skills
   if (skills?.length && options?.resolveSkills) {
     const skillContent = options.resolveSkills(skills, options.disabledSkills)
     if (skillContent) {
-      config.prompt = skillContent + (config.prompt ? "\n\n" + config.prompt : "")
+      config.system = skillContent + (config.system ? "\n\n" + config.system : "")
     }
   }
 
   // 4. Strip disabled agent references
-  if (options?.disabledAgents && options.disabledAgents.size > 0 && config.prompt) {
-    config.prompt = stripDisabledAgentReferences(config.prompt, options.disabledAgents)
+  if (options?.disabledAgents && options.disabledAgents.size > 0 && config.system) {
+    config.system = stripDisabledAgentReferences(config.system, options.disabledAgents)
   }
 
   return config

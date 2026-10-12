@@ -50,8 +50,6 @@ describe("loadSkills", () => {
   })
 
   it("deduplicates skills by name (API wins over FS)", async () => {
-    // We can't easily test the real API, but we can verify the merge logic
-    // by calling loadSkills without serverUrl and checking deduplication
     const tmpDir = join(tmpdir(), `loader-test-dedup-${Date.now()}`)
     const skillDir = join(tmpDir, ".opencode", "skills", "dup-skill")
     mkdirSync(skillDir, { recursive: true })
@@ -60,9 +58,13 @@ describe("loadSkills", () => {
       `---\nname: dup-skill\n---\nFS Content`
     )
 
-    const result = await loadSkills({ projectDirectory: tmpDir })
+    const result = await loadSkills({
+      projectDirectory: tmpDir,
+      fetchSkills: async () => [{ name: "dup-skill", content: "V2 catalog content", source: "api" }],
+    })
     const dupSkills = result.skills.filter((s) => s.name === "dup-skill")
     expect(dupSkills.length).toBe(1) // No duplicates
+    expect(dupSkills[0].content).toBe("V2 catalog content")
 
     rmSync(tmpDir, { recursive: true, force: true })
   })

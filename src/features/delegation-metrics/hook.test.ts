@@ -22,19 +22,19 @@ describe("captureToolMetrics", () => {
   it("collects nothing when LEAD_METRICS is unset", () => {
     delete process.env[METRICS_ENV_VAR]
     captureToolMetrics({
-      toolName: "task",
+      toolName: "subagent",
       sessionId: "s1",
-      args: { description: "d", prompt: "p", subagent_type: "engineer" },
+      args: { description: "d", prompt: "p", agent: "engineer" },
     })
-    captureToolMetrics({ toolName: "read", sessionId: "s1", args: { filePath: "/a.ts" } })
+    captureToolMetrics({ toolName: "read", sessionId: "s1", args: { path: "/a.ts" } })
     expect(peekSessionMetrics("s1")).toBeUndefined()
   })
 
-  it("records task tool calls as delegation metrics", () => {
+  it("records subagent tool calls as delegation metrics", () => {
     captureToolMetrics({
-      toolName: "task",
+      toolName: "subagent",
       sessionId: "s1",
-      args: { description: "d", prompt: "p", subagent_type: "engineer" },
+      args: { description: "d", prompt: "p", agent: "engineer" },
     })
 
     const snapshot = peekSessionMetrics("s1")!
@@ -42,7 +42,7 @@ describe("captureToolMetrics", () => {
   })
 
   it("records read tool calls as read metrics", () => {
-    captureToolMetrics({ toolName: "read", sessionId: "s1", args: { filePath: "/a.ts" } })
+    captureToolMetrics({ toolName: "read", sessionId: "s1", args: { path: "/a.ts" } })
     const snapshot = peekSessionMetrics("s1")!
     expect(snapshot.reads.totalCalls).toBe(1)
   })
@@ -54,13 +54,13 @@ describe("captureToolMetrics", () => {
   })
 
   it("ignores unrelated tools", () => {
-    captureToolMetrics({ toolName: "write", sessionId: "s1", args: { filePath: "/a.ts" } })
+    captureToolMetrics({ toolName: "write", sessionId: "s1", args: { path: "/a.ts" } })
     expect(peekSessionMetrics("s1")).toBeUndefined()
   })
 
   it("never throws on malformed args", () => {
     expect(() =>
-      captureToolMetrics({ toolName: "task", sessionId: "s1", args: null as unknown as Record<string, unknown> }),
+      captureToolMetrics({ toolName: "subagent", sessionId: "s1", args: null as unknown as Record<string, unknown> }),
     ).not.toThrow()
   })
 })
@@ -84,9 +84,9 @@ describe("reportAndClearSessionMetrics", () => {
   it("clears session state once reported", () => {
     process.env[METRICS_ENV_VAR] = "1"
     captureToolMetrics({
-      toolName: "task",
+      toolName: "subagent",
       sessionId: "s1",
-      args: { description: "d", prompt: "p", subagent_type: "engineer" },
+      args: { description: "d", prompt: "p", agent: "engineer" },
     })
     expect(peekSessionMetrics("s1")).toBeDefined()
 
@@ -101,9 +101,9 @@ describe("reportAndClearSessionMetrics", () => {
   it("does not throw when LEAD_METRICS is enabled", () => {
     process.env[METRICS_ENV_VAR] = "1"
     captureToolMetrics({
-      toolName: "task",
+      toolName: "subagent",
       sessionId: "s1",
-      args: { description: "d", prompt: "p", subagent_type: "engineer" },
+      args: { description: "d", prompt: "p", agent: "engineer" },
     })
     expect(() => reportAndClearSessionMetrics("s1")).not.toThrow()
   })

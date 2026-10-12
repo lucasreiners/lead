@@ -12,7 +12,7 @@ bun run build
 # Run all tests
 bun test
 
-# Expected: 134 tests across 25 files, 0 failures
+# Expected: 0 failures
 ```
 
 ---
@@ -25,7 +25,7 @@ L.E.A.D. provides **10 specialist agents** organized into two tiers:
 |-------|-----|------|------------|------|
 | **Tech Lead** | `tech-lead` | primary | Strategic (Opus) | Orchestrator — routes work to specialists |
 | **Product Owner** | `product-owner` | primary | Strategic (Opus) | Requirements engineer — transforms stakeholder ideas into functional requirements |
-| **Lead Developer** | `lead-dev` | primary | Strategic (Opus) | Plan executor — drives implementation with TodoWrite tracking |
+| **Lead Developer** | `lead-dev` | primary | Strategic (Opus) | Plan executor — tracks implementation in plan checkboxes |
 | **Engineer** | `engineer` | subagent | Engineering (Sonnet) | Code implementer — writes features, fixes, tests |
 | **Architect** | `architect` | subagent | Strategic (Opus) | Planner — creates structured plans in `.lead/` |
 | **Code Analyst** | `code-analyst` | subagent | Engineering (Sonnet) | Codebase explorer — traces dependencies, identifies patterns |
@@ -70,21 +70,20 @@ The entry point for functional/business requirements. Transforms stakeholder ide
 
 Executes approved plans step-by-step. The primary implementation driver.
 
-- **Can**: Read, write, edit files, run bash, use TodoWrite
+- **Can**: Read, write, edit files, run bash
 - **Cannot**: Second-guess approved plans
 - **Key behaviors**:
-  - **TodoWrite is mandatory** — seeds sidebar todos from plan's `## Progress` checkboxes before any work
+  - **Read the plan first** — its `## Progress` checkboxes are the sole source of task status; `## TODOs` contains detailed task descriptions
   - Delegates code tasks to **Engineer** agents (can parallelize independent tasks)
-  - Runs **Tester** after each task: implement → tester [PASS] → mark `- [x]` in plan + `completed` in todos
-  - Max 3 fix cycles per task before moving on
-  - On continuation (`/implement` resume): re-reads plan, rebuilds todo list from current state
+  - Runs **Tester** after each task: implement → tester [PASS] → mark `- [x]` in the plan
+  - Keeps the checkbox unchecked during implementation and failed verification; reports a blocker after max 3 fix cycles
+  - On continuation (`/implement` resume): re-reads the plan from disk and executes the next unchecked task
 
 ### Engineer
 
 Writes production-grade code. Delegated to by Lead Developer.
 
 - **Can**: Read, write, edit files, run bash
-- **Cannot**: Use TodoWrite (subagent limitation)
 - **Key behaviors**:
   - Follows existing codebase patterns and conventions
   - Enterprise-grade error handling and TypeScript types
@@ -106,7 +105,7 @@ Creates structured implementation plans. Never writes code.
   - `## Objectives` — deliverables, definition of done, guardrails
   - `## Progress` — lightweight `- [ ]` checklist (only section with checkboxes, updated during execution)
   - `## TODOs` — detailed task descriptions with `**What**`, `**Files**`, `**Acceptance**`
-  - `## Verification` — final verification checklist
+  - `## Verification` — final verification instructions (plain bullets)
 
 ### Code Analyst
 
@@ -174,7 +173,7 @@ User request → Tech Lead → Engineer (simple tasks)
 ### User bypasses Tech Lead
 
 ```
-Tab to Lead Developer → direct implementation work with TodoWrite tracking
+Tab to Lead Developer → read plan → execute unchecked tasks → verify → check completed tasks
 ```
 
 ### Requirements Engineering
@@ -194,7 +193,9 @@ Stakeholder idea → Product Owner (clarifying questions, research)
 - **Conventional commits**: `feat:`, `fix:`, `chore:`, `docs:`
 - **State file**: `.lead/state.json` (gitignored, per-developer local state)
 - **Plans**: `.lead/<ticket>/plan.md` (committed) or `.lead/_adhoc/{slug}.md` (gitignored)
-- **TodoWrite**: Lead Developer seeds from plan checkboxes; marks `in_progress` before each task, `completed` after tester passes
+- **Task status**: Plan `## Progress` checkboxes are authoritative; keep `- [ ]` until Tester returns [PASS], then mark `- [x]`
+- **Recovery**: Re-read the plan from disk after compaction; automatic recovery and continuation only apply to its registered sessions and never resume paused work
+- **Existing plans**: Plans without `## Progress` retain their existing task checklist format
 - **Version**: Shown in Tech Lead display name (`Tech Lead · vX.Y.Z`)
 
 ---

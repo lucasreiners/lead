@@ -42,20 +42,5 @@ export type {
   VerificationReminderResult,
 } from "./verification-reminder"
 
-export { applyTodoDescriptionOverride } from "./todo-description-override"
-
-export { checkStaleTodos } from "./todo-continuation-enforcer"
-export type { TodoItem, TodoContinuationResult } from "./todo-continuation-enforcer"
-
-export {
-  saveTodoStateForCompaction,
-  getPreservedTodoState,
-  clearPreservedTodoState,
-  buildTodoPreservationPrompt,
-} from "./compaction-todo-preserver"
-
 export { updateTokenState, getTokenState, resetTokenState } from "./session-token-state"
 export type { TokenStateEntry } from "./session-token-state"
-
-export { captureToDoWrite } from "./todo-writer"
-export type { TodoWriterHookInput, TodoWriterHookResult } from "./todo-writer"

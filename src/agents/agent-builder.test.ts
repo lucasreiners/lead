@@ -1,156 +1,80 @@
 import { describe, it, expect, beforeEach } from "bun:test"
-import {
-  buildAgent,
-  stripDisabledAgentReferences,
-  resetNameVariants,
-  registerAgentNameVariants,
-} from "./agent-builder"
-import type { AgentConfig } from "@opencode-ai/sdk"
+import { buildAgent, applyAgentPreferences, stripDisabledAgentReferences, resetNameVariants } from "./agent-builder"
+import { resolveModel, type AgentConfig } from "./types"
 
-beforeEach(() => {
-  resetNameVariants()
-})
+beforeEach(resetNameVariants)
 
-describe("buildAgent with static config", () => {
-  it("returns config as-is for simple static input", () => {
-    const config: AgentConfig = { model: "gpt-4o", description: "test" }
-    const result = buildAgent(config, "gpt-4o")
-    expect(result.model).toBe("gpt-4o")
-    expect(result.description).toBe("test")
-  })
-
-  it("uses the model parameter when factory-built", () => {
+describe("native agent builder", () => {
+  it("preserves native static input and resolves factory models", () => {
+    const config: AgentConfig = { model: resolveModel("openai/gpt-4o"), system: "Base" }
+    expect(buildAgent(config, "")).toEqual(config)
     const factory = Object.assign(
-      (model: string): AgentConfig => ({ model, description: "factory agent" }),
-      { mode: "subagent" as const }
+      (model: string): AgentConfig => ({ model: resolveModel(model), mode: "subagent" }),
+      { mode: "subagent" as const },
     )
-    const result = buildAgent(factory, "claude-3-5-sonnet")
-    expect(result.model).toBe("claude-3-5-sonnet")
-    expect(result.description).toBe("factory agent")
-  })
-})
-
-describe("buildAgent — skill resolution", () => {
-  it("prepends skill content to prompt", () => {
-    const config: AgentConfig & { skills?: string[] } = {
-      model: "gpt-4o",
-      prompt: "Base prompt",
-      skills: ["sdd-planning"],
-    }
-    const resolveSkills = (_names: string[]) => "# SDD Planning\nContent here"
-    const result = buildAgent(config, "gpt-4o", { resolveSkills })
-    expect(result.prompt).toContain("# SDD Planning")
-    expect(result.prompt).toContain("Base prompt")
-    expect(result.prompt!.indexOf("# SDD Planning")).toBeLessThan(result.prompt!.indexOf("Base prompt"))
+    expect(buildAgent(factory, "anthropic/claude").model).toEqual({ providerID: "anthropic", id: "claude" })
   })
 
-  it("skips skill resolution when no resolveSkills provided", () => {
-    const config: AgentConfig & { skills?: string[] } = {
-      model: "gpt-4o",
-      prompt: "Base prompt",
-      skills: ["sdd-planning"],
-    }
-    const result = buildAgent(config, "gpt-4o")
-    expect(result.prompt).toBe("Base prompt")
-  })
-
-  it("skips disabled skills", () => {
-    const config: AgentConfig & { skills?: string[] } = {
-      model: "gpt-4o",
-      prompt: "Base",
-      skills: ["skill-a", "skill-b"],
-    }
-    const resolveSkills = (names: string[], disabled?: Set<string>) => {
-      return names.filter((n) => !disabled?.has(n)).join(",")
-    }
-    const result = buildAgent(config, "gpt-4o", {
-      resolveSkills,
-      disabledSkills: new Set(["skill-a"]),
+  it("injects selected skills into system and filters disabled skills", () => {
+    const config: AgentConfig = { system: "Base prompt" }
+    const result = buildAgent(config, "", {
+      skills: ["disabled", "house-style"],
+      disabledSkills: new Set(["disabled"]),
+      resolveSkills: (names, disabled) => names.filter((name) => !disabled?.has(name)).join(","),
     })
-    expect(result.prompt).toContain("skill-b")
-    expect(result.prompt).not.toContain("skill-a")
-  })
-})
-
-describe("stripDisabledAgentReferences", () => {
-  it("removes lines mentioning disabled agents", () => {
-    const prompt = `Use the architect to plan.
-Then delegate to the code-analyst for exploration.
-Finally ask the reviewer to check.`
-    const result = stripDisabledAgentReferences(prompt, new Set(["code-analyst"]))
-    expect(result).not.toContain("code-analyst")
-    expect(result).toContain("architect")
-    expect(result).toContain("reviewer")
+    expect(result.system).toBe("house-style\n\nBase prompt")
+    expect(config.system).toBe("Base prompt")
+    expect(result).not.toHaveProperty("skills")
   })
 
-  it("removes lines with capitalized variants", () => {
-    const prompt = `Ask Code Analyst to explore the codebase.
-The researcher will look it up.`
-    const result = stripDisabledAgentReferences(prompt, new Set(["code-analyst"]))
-    expect(result).not.toContain("Code Analyst")
-    expect(result).toContain("researcher")
-  })
-
-  it("returns unchanged prompt when no agents disabled", () => {
-    const prompt = "Use architect, code-analyst, and reviewer"
-    const result = stripDisabledAgentReferences(prompt, new Set())
-    expect(result).toBe(prompt)
-  })
-})
-
-describe("buildAgent — category config", () => {
-  it("propagates a category-level variant to an agent in that category", () => {
-    const config: AgentConfig & { category?: string } = {
-      model: "gpt-4o",
-      description: "test",
+  it("resolves category model, variant and skills using the explicit category", () => {
+    const result = buildAgent({ system: "Base" }, "", {
       category: "planning",
-    }
-    const result = buildAgent(config, "gpt-4o", {
-      categories: { planning: { variant: "high" } },
+      categories: { planning: { model: "anthropic/claude", variant: "high", skills: ["planning"] } },
+      resolveSkills: (names) => names.join(","),
     })
-    expect(result.variant).toBe("high")
+    expect(result.model).toEqual({ providerID: "anthropic", id: "claude", variant: "high" })
+    expect(result.system).toBe("planning\n\nBase")
   })
 
-  it("resolves the category from the explicit option", () => {
-    const config: AgentConfig = { model: "gpt-4o", description: "test" }
-    const result = buildAgent(config, "gpt-4o", {
+  it("lets explicit skills override category skills", () => {
+    const result = buildAgent({}, "", {
       category: "planning",
-      categories: { planning: { variant: "high" } },
+      skills: ["explicit"],
+      categories: { planning: { skills: ["category"] } },
+      resolveSkills: (names) => names.join(","),
     })
-    expect(result.variant).toBe("high")
+    expect(result.system).toBe("explicit")
   })
 
-  it("prefers the explicit category option over a category on the config", () => {
-    const config: AgentConfig & { category?: string } = {
-      model: "gpt-4o",
-      description: "test",
-      category: "planning",
-    }
-    const result = buildAgent(config, "gpt-4o", {
-      category: "review",
-      categories: { planning: { variant: "low" }, review: { variant: "high" } },
-    })
-    expect(result.variant).toBe("high")
+  it("preserves request maps while applying plugin preferences", () => {
+    const result = applyAgentPreferences({
+      request: { settings: { timeout: 1000 }, headers: { "x-team": "lead" }, body: { seed: 2 } },
+    }, { model: "openrouter/anthropic/claude#low", variant: "high", temperature: 0, prompt: "Override" })
+    expect(result.model).toEqual({ providerID: "openrouter", id: "anthropic/claude", variant: "high" })
+    expect(result.request).toEqual({ settings: { timeout: 1000 }, headers: { "x-team": "lead" }, body: { seed: 2, temperature: 0 } })
+    expect(result.system).toBe("Override")
   })
 
-  it("leaves config untouched when the category has no entry", () => {
-    const config: AgentConfig = { model: "gpt-4o", description: "test" }
-    const result = buildAgent(config, "gpt-4o", {
-      category: "planning",
-      categories: { review: { variant: "high" } },
+  it("normalizes configured tool restrictions without re-enabling denied aliases", () => {
+    const result = applyAgentPreferences({ permissions: [{ action: "read", resource: "*.env", effect: "ask" }] }, {
+      tools: { shell: false, subagent: true, edit: true, write: false, patch: true, company_tool: false, constructor: false },
     })
-    expect("variant" in result).toBe(false)
+    expect(result.permissions).toEqual([
+      { action: "read", resource: "*.env", effect: "ask" },
+      { action: "shell", resource: "*", effect: "deny" },
+      { action: "subagent", resource: "*", effect: "allow" },
+      { action: "edit", resource: "*", effect: "deny" },
+      { action: "company_tool", resource: "*", effect: "deny" },
+      { action: "constructor", resource: "*", effect: "deny" },
+    ])
   })
-})
 
-describe("buildAgent — disabled agents", () => {
-  it("strips disabled agent references from prompt", () => {
-    const config: AgentConfig = {
-      model: "gpt-4o",
-      prompt: "Ask the code-analyst to explore.\nThen use the architect for planning.",
-    }
-    const result = buildAgent(config, "gpt-4o", { disabledAgents: new Set(["code-analyst"]) })
-    expect(result.prompt).not.toContain("code-analyst")
-    expect(result.prompt).toContain("architect")
+  it("strips disabled specialists from the system prompt", () => {
+    const result = buildAgent({ system: "Ask Code Analyst to explore.\nAsk the architect to plan." }, "", {
+      disabledAgents: new Set(["code-analyst"]),
+    })
+    expect(result.system).toBe("Ask the architect to plan.")
+    expect(stripDisabledAgentReferences("Unchanged", new Set())).toBe("Unchanged")
   })
 })

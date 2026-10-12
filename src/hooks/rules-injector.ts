@@ -1,4 +1,5 @@
-import { join } from "path"
+import { readdir, readFile } from "node:fs/promises"
+import { join, relative, sep } from "node:path"
 import { resolveSafePath } from "../shared/resolve-safe-path"
 
 /**
@@ -48,8 +49,11 @@ export async function getRulesForFile(
 
   let entries: string[]
   try {
-    const glob = new Bun.Glob("**/*.md")
-    entries = await Array.fromAsync(glob.scan(rulesDir))
+    const dirents = await readdir(rulesDir, { recursive: true, withFileTypes: true })
+    entries = dirents
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+      .map((entry) => relative(rulesDir, join(entry.parentPath, entry.name)).split(sep).join("/"))
+      .filter((entry) => !entry.split("/").some((part) => part.startsWith(".")))
   } catch {
     // Rules dir doesn't exist or can't be read
     return { content: "", matchedRules: [] }
@@ -74,7 +78,7 @@ export async function getRulesForFile(
 
     if (applies) {
       try {
-        const content = await Bun.file(resolved).text()
+        const content = await readFile(resolved, "utf-8")
         if (content.trim()) {
           contentParts.push(content.trim())
           matchedRules.push(resolved)

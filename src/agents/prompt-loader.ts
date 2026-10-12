@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import type { LeadAgentName } from "./types"
 
 /**
@@ -19,22 +20,11 @@ export interface PromptLoadResult {
 }
 
 /**
- * Attempts to load a prompt string from the agent's prompt.md file.
- * Returns null if the file does not exist or cannot be read.
+ * Defers to per-agent inline prompts. Source prompt files are loaded by
+ * readPromptMd() in each agent factory instead.
  */
-export function tryLoadPromptFile(agentName: LeadAgentName | string): string | null {
-  // Resolve relative to this file's directory at build time
-  const promptPath = new URL(`${agentName}/prompt.md`, import.meta.url)
-  try {
-    const file = Bun.file(promptPath)
-    // Bun.file().text() is async but exists() is sync-compatible via Bun
-    // We use the synchronous path via import.meta.resolve for build-time embedding
-    // At runtime we return null and let callers use their inline defaults
-    // This is intentionally synchronous — prompt files are small
-    return null // Deferred to per-agent inline strings
-  } catch {
-    return null
-  }
+export function tryLoadPromptFile(_agentName: LeadAgentName | string): string | null {
+  return null
 }
 
 /**
@@ -47,7 +37,7 @@ export function tryLoadPromptFile(agentName: LeadAgentName | string): string | n
 export function readPromptMd(importMetaUrl: string): string | null {
   try {
     const url = new URL("prompt.md", importMetaUrl)
-    const content = require("fs").readFileSync(new URL(url).pathname, "utf-8") as string
+    const content = readFileSync(url, "utf-8")
     return content
   } catch {
     return null

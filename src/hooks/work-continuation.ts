@@ -32,7 +32,7 @@ export function checkContinuation(options: WorkContinuationOptions): WorkContinu
 
   const state = readWorkState(directory)
 
-  if (!state || state.paused) {
+  if (!state || state.paused || !state.session_ids.includes(sessionId)) {
     return { continuationPrompt: null }
   }
 
@@ -66,9 +66,6 @@ export function checkContinuation(options: WorkContinuationOptions): WorkContinu
     writeWorkState(directory, {
       ...state,
       stale_continuation_count: staleCount,
-      session_ids: state.session_ids.includes(sessionId)
-        ? state.session_ids
-        : [...state.session_ids, sessionId],
     })
   } else {
     // Progress was made — reset stale count and update snapshot
@@ -76,9 +73,6 @@ export function checkContinuation(options: WorkContinuationOptions): WorkContinu
       ...state,
       continuation_completed_snapshot: progress.completed,
       stale_continuation_count: 0,
-      session_ids: state.session_ids.includes(sessionId)
-        ? state.session_ids
-        : [...state.session_ids, sessionId],
     })
   }
 
@@ -89,6 +83,9 @@ export function checkContinuation(options: WorkContinuationOptions): WorkContinu
 **Progress**: ${progress.completed}/${progress.total} tasks complete (${remaining} remaining)
 **Plan file**: \`${state.active_plan}\`
 
-Read the plan file, find the next unchecked \`- [ ]\` task, and continue execution. Do not stop until all tasks are complete.`,
+First read the plan file. Its \`## Progress\` checkboxes are the sole source of task status. Find the next unchecked \`- [ ]\` task and read its \`## TODOs\` details before continuing.
+For an older plan without \`## Progress\`, use its existing task checklist in place.
+Keep the checkbox unchecked until the tester returns [PASS], then mark it \`- [x]\`. On [FAIL], fix and re-test; report a blocker after 3 failed cycles.
+Do not stop until all tasks are complete or you are explicitly blocked.`,
   }
 }

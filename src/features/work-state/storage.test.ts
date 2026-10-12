@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "bun:test"
 import { readWorkState, writeWorkState, clearWorkState, getPlanProgress } from "./storage"
-import { mkdirSync, writeFileSync, rmSync } from "fs"
+import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from "fs"
 import { join } from "path"
 import { tmpdir } from "os"
 
@@ -57,6 +57,23 @@ describe("readWorkState / writeWorkState / clearWorkState", () => {
 })
 
 describe("getPlanProgress", () => {
+  it.each([
+    ["details and verification", "## Progress\n- [x] Task\n## TODOs\n- [ ] Task detail\n## Verification\n- [ ] Verify", 1, 1],
+    ["empty authoritative section", "## Progress\n## TODOs\n- [ ] Detail", 0, 0],
+    ["nested headings and uppercase checks", "## Progress\r\n### Phase one\r\n- [X] Done\r\n- [ ] Next\r\n# Appendix\r\n- [ ] Outside", 2, 1],
+    ["fenced examples", "```md\n## Progress\n- [ ] Example\n```\n## Progress\n- [x] Done\n~~~md\n- [ ] Example\n~~~\nText mentions - [ ] inline", 1, 1],
+    ["old checklist format", "# Existing plan\n## TODOs\n- [x] Done\n- [ ] Next", 2, 1],
+  ])("counts only real progress for %s", (_label, content, total, completed) => {
+    const dir = mkdtempSync(join(tmpdir(), "plan-progress-sections-"))
+    try {
+      const planPath = join(dir, "plan.md")
+      writeFileSync(planPath, content)
+      expect(getPlanProgress(planPath)).toEqual({ total, completed, isComplete: total === completed })
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
   it("returns all zeros for non-existent file", () => {
     const result = getPlanProgress("/does/not/exist.md")
     expect(result.total).toBe(0)
