@@ -1,3 +1,5 @@
+import { stat } from "node:fs/promises"
+
 /**
  * Write-existing-file guard.
  * Prevents accidental overwrite of existing files by tracking which files
@@ -61,7 +63,7 @@ export function createWriteGuard() {
 
     // Check if the file exists on disk
     try {
-      const exists = await Bun.file(filePath).exists()
+      const exists = (await stat(filePath)).isFile()
       if (exists) {
         return {
           allowed: false,

@@ -20,11 +20,9 @@ export interface VerificationReminderResult {
 /** Tools that trigger verification reminders */
 const IMPLEMENTATION_TOOLS = new Set([
   "write",
-  "Write",
   "edit",
-  "Edit",
-  "bash",
-  "Bash",
+  "patch",
+  "shell",
 ])
 
 /** Agents that should receive verification reminders */
@@ -32,7 +30,7 @@ const REMINDER_AGENTS = new Set(["lead-dev", "engineer", "tester"])
 
 /**
  * Build a verification reminder after implementation tool use.
- * Only fires for lead-dev/engineer agents after write/edit/bash tools.
+ * Only fires for implementation agents after write/edit/patch/shell tools.
  */
 export function buildVerificationReminder(
   options: VerificationReminderOptions,

@@ -5,7 +5,7 @@ export const MAX_TRACKED_PATHS = 500
  *  this bounds memory if a session is abandoned without going idle. */
 export const MAX_TRACKED_SESSIONS = 100
 
-/** Max distinct `subagent_type` buckets per session. `subagent_type` is model-supplied
+/** Max distinct `agent` buckets per session. `agent` is model-supplied
  *  and therefore unbounded cardinality; anything beyond this is folded into "other". */
 export const MAX_SUBAGENT_BUCKETS = 32
 

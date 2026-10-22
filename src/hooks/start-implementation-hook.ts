@@ -1,6 +1,6 @@
-import { join } from "path"
-import { readWorkState, writeWorkState } from "../features/work-state/storage"
-import { getPlanProgress } from "../features/work-state/storage"
+import { readdir, readFile, stat } from "node:fs/promises"
+import { isAbsolute, join, relative, sep } from "node:path"
+import { readWorkState, writeWorkState, getPlanProgress } from "../features/work-state/storage"
 import { ADHOC_DIR, STATE_DIR } from "../features/work-state/constants"
 import type { WorkState } from "../features/work-state/types"
 
@@ -36,16 +36,16 @@ export interface StartImplementationResult {
  * 2. Relative path as-is
  * 3. Ticket directory: .lead/<input>/plan.md
  * 4. Ad-hoc directory: .lead/_adhoc/<input>.md
- * 5. Glob across all .lead/ subdirectories
+ * 5. Search Markdown files across all .lead/ subdirectories
  */
 async function findPlanFile(
   directory: string,
   planNameOrPath: string,
 ): Promise<string | null> {
   // 1. Absolute path
-  if (planNameOrPath.startsWith("/")) {
+  if (isAbsolute(planNameOrPath)) {
     try {
-      if (await Bun.file(planNameOrPath).exists()) return planNameOrPath
+      if ((await stat(planNameOrPath)).isFile()) return planNameOrPath
     } catch {
       // ignore
     }
@@ -55,7 +55,7 @@ async function findPlanFile(
   // 2. Relative path as-is
   const directPath = join(directory, planNameOrPath)
   try {
-    if (await Bun.file(directPath).exists()) return directPath
+    if ((await stat(directPath)).isFile()) return directPath
   } catch {
     // ignore
   }
@@ -63,7 +63,7 @@ async function findPlanFile(
   // 3. Ticket directory: .lead/<ticket>/plan.md
   const ticketPlanPath = join(directory, STATE_DIR, planNameOrPath, "plan.md")
   try {
-    if (await Bun.file(ticketPlanPath).exists()) return ticketPlanPath
+    if ((await stat(ticketPlanPath)).isFile()) return ticketPlanPath
   } catch {
     // ignore
   }
@@ -74,19 +74,20 @@ async function findPlanFile(
     : `${planNameOrPath}.md`
   const adhocPath = join(directory, ADHOC_DIR, adhocName)
   try {
-    if (await Bun.file(adhocPath).exists()) return adhocPath
+    if ((await stat(adhocPath)).isFile()) return adhocPath
   } catch {
     // ignore
   }
 
-  // 5. Glob across all .lead/ subdirectories
+  // 5. Search all .lead/ subdirectories (like **/*.md, excluding dotfiles)
   try {
-    const glob = new Bun.Glob("**/*.md")
     const leadDir = join(directory, STATE_DIR)
     const needle = planNameOrPath.toLowerCase()
-    for await (const entry of glob.scan(leadDir)) {
-      // Skip state files
-      if (entry === "state.json") continue
+    const entries = await readdir(leadDir, { recursive: true, withFileTypes: true })
+    for (const dirent of entries) {
+      if (!dirent.isFile() || !dirent.name.endsWith(".md")) continue
+      const entry = relative(leadDir, join(dirent.parentPath, dirent.name)).split(sep).join("/")
+      if (entry.split("/").some((part) => part.startsWith("."))) continue
       const basename = entry.replace(/\.md$/, "").toLowerCase()
       const parts = basename.split("/")
       const leaf = parts[parts.length - 1]
@@ -118,19 +119,20 @@ export async function handleStartImplementation(options: StartImplementationOpti
   if (!trimmedArgs) {
     // No plan specified — check for active or paused plan
     const existingState = readWorkState(directory)
-    if (existingState && !existingState.paused) {
-      const progress = getPlanProgress(existingState.active_plan)
-      return {
-        prompt: buildContinuationPrompt(existingState, progress),
+    if (existingState) {
+      // Explicit /implement enrolls this session and resumes paused work.
+      const resumedState = {
+        ...existingState,
+        paused: false,
+        stale_continuation_count: 0,
+        session_ids: existingState.session_ids.includes(sessionId)
+          ? existingState.session_ids
+          : [...existingState.session_ids, sessionId],
       }
-    }
-    if (existingState && existingState.paused) {
-      // Resume the paused plan
-      const resumedState = { ...existingState, paused: false }
       writeWorkState(directory, resumedState)
       const progress = getPlanProgress(existingState.active_plan)
       return {
-        prompt: buildStartPrompt(resumedState, progress, ""),
+        prompt: buildContinuationPrompt(resumedState, progress),
       }
     }
     return {
@@ -152,7 +154,7 @@ export async function handleStartImplementation(options: StartImplementationOpti
   // Read the plan to get its name
   let planContent = ""
   try {
-    planContent = await Bun.file(planPath).text()
+    planContent = await readFile(planPath, "utf-8")
   } catch {
     return { prompt: null, error: `Could not read plan file: ${planPath}` }
   }
@@ -168,6 +170,7 @@ export async function handleStartImplementation(options: StartImplementationOpti
     ? {
         ...existingState!,
         paused: false,
+        stale_continuation_count: 0,
         start_sha: startSha ?? existingState!.start_sha,
         session_ids: existingState!.session_ids.includes(sessionId)
           ? existingState!.session_ids
@@ -187,7 +190,7 @@ export async function handleStartImplementation(options: StartImplementationOpti
   writeWorkState(directory, workState)
 
   const progress = getPlanProgress(planPath)
-  const prompt = buildStartPrompt(workState, progress, planContent)
+  const prompt = buildStartPrompt(workState, progress)
 
   return { prompt }
 }
@@ -195,10 +198,8 @@ export async function handleStartImplementation(options: StartImplementationOpti
 function buildStartPrompt(
   state: WorkState,
   progress: ReturnType<typeof getPlanProgress>,
-  planContent: string,
 ): string {
   const remaining = progress.total - progress.completed
-  const todoSeedBlock = buildTodoSeedBlock(planContent)
 
   return `You are now the **Lead Developer** executing the plan at \`${state.active_plan}\`.
 
@@ -207,57 +208,23 @@ function buildStartPrompt(
 
 ## CRITICAL — Your FIRST action
 
-Your VERY FIRST tool call MUST be **TodoWrite**. Do NOT read files, write code, or call any other tool before TodoWrite.
-Load ALL items from the plan's \`## Progress\` section:
-- Each \`- [ ]\` item → todo with status \`pending\`
-- Each \`- [x]\` item → todo with status \`completed\`
-${todoSeedBlock}
-If you skip this step, the user has NO visibility into what you're doing. This is non-negotiable.
+Your FIRST action MUST be to **Read** the plan file. Its \`## Progress\` checkboxes are the sole source of task status.
+For an older plan without \`## Progress\`, use its existing task checklist in place; preserve its format.
 
 ## Then — Execute tasks
 
 The plan has two sections: \`## Progress\` (checklist to update) and \`## TODOs\` (detailed descriptions to read).
 
 For EACH task, follow this exact sequence:
-1. **TodoWrite**: set the current task to \`in_progress\` (include ALL other todos in the call)
+1. Select the first unchecked \`- [ ]\` task from \`## Progress\`
 2. Read the matching \`## TODOs\` entry for What/Files/Acceptance details
 3. Execute the task (write code, run commands, create files)
 4. Delegate to the **tester** agent for verification
-5. On [PASS]: **Edit** the plan file to mark \`- [ ]\` → \`- [x]\` in \`## Progress\`, THEN **TodoWrite** to set the task to \`completed\`
-6. On [FAIL]: fix, re-test, repeat (max 3 cycles)
+5. Keep the checkbox unchecked until verification returns [PASS], then **Edit** the plan file to mark \`- [ ]\` → \`- [x]\` in \`## Progress\`
+6. On [FAIL]: leave the checkbox unchecked, fix, and re-test (max 3 cycles); if still failing, report the blocker
 7. Move to next task
 
-EVERY task transition requires a TodoWrite call. No exceptions.
-
 Do not stop until all tasks are complete or you are explicitly blocked.`
-}
-
-function buildTodoSeedBlock(planContent: string): string {
-  if (!planContent) return ""
-
-  const lines = planContent.split("\n")
-  const todos: Array<{ label: string; done: boolean }> = []
-
-  for (const line of lines) {
-    const unchecked = line.match(/^\s*-\s+\[ \]\s+(.+)$/)
-    if (unchecked?.[1]) {
-      todos.push({ label: unchecked[1].trim(), done: false })
-      continue
-    }
-    const checked = line.match(/^\s*-\s+\[x\]\s+(.+)$/i)
-    if (checked?.[1]) {
-      todos.push({ label: checked[1].trim(), done: true })
-    }
-  }
-
-  if (todos.length === 0) return ""
-
-  const lines2 = ["", "The todos to seed (in order):"]
-  for (const t of todos) {
-    lines2.push(`- ${t.done ? "[completed]" : "[pending]"} ${t.label}`)
-  }
-  lines2.push("")
-  return lines2.join("\n")
 }
 
 function buildContinuationPrompt(
@@ -272,23 +239,17 @@ function buildContinuationPrompt(
 
 ## CRITICAL — Your FIRST action
 
-Your VERY FIRST tool call MUST be to **Read** the plan file, and your SECOND tool call MUST be **TodoWrite**.
-Do NOT write code or call any other tool before these two calls.
-
-Rebuild the full todo list from the \`## Progress\` section:
-- Every \`- [ ]\` item → \`pending\`
-- Every \`- [x]\` item → \`completed\`
-
-If you skip this, the user has NO visibility into progress. This is non-negotiable.
+Your FIRST action MUST be to **Read** the plan file. Its \`## Progress\` checkboxes are the sole source of task status.
+For an older plan without \`## Progress\`, use its existing task checklist in place; preserve its format.
 
 ## Then — Continue execution
 
-Find the first \`pending\` todo (first unchecked \`- [ ]\` in \`## Progress\`), **TodoWrite** it to \`in_progress\`, and execute it.
+Find the first unchecked \`- [ ]\` task in \`## Progress\` and execute it.
 Read the matching \`## TODOs\` entry for detailed What/Files/Acceptance context.
 
-For EACH task: implement → tester [PASS] → **Edit** plan (\`- [x]\`) → **TodoWrite** (\`completed\`) → next task.
-
-EVERY task transition requires a TodoWrite call. No exceptions.
+Keep the checkbox unchecked until verification returns [PASS].
+For EACH task: implement → tester [PASS] → **Edit** plan (\`- [x]\`) → next task.
+On [FAIL], leave the checkbox unchecked, fix, and re-test (max 3 cycles); if still failing, report the blocker.
 
 Do not stop until all tasks are complete or you are explicitly blocked.`
 }

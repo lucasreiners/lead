@@ -66,7 +66,6 @@ const ContinuationIdleConfigSchema = z.object({
   enabled: z.boolean().optional(),
   work: z.boolean().optional(),
   workflow: z.boolean().optional(),
-  todo_prompt: z.boolean().optional(),
 })
 
 const ContinuationConfigSchema = z.object({

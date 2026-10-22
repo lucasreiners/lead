@@ -26,13 +26,13 @@ export interface CompactionRecoveryResult {
 export function checkCompactionRecovery(
   options: CompactionRecoveryOptions,
 ): CompactionRecoveryResult {
-  const { directory } = options
+  const { directory, sessionId } = options
 
   const parts: string[] = []
 
   // Check for active plan
   const workState = readWorkState(directory)
-  if (workState && !workState.paused) {
+  if (workState && !workState.paused && workState.session_ids.includes(sessionId)) {
     const progress = getPlanProgress(workState.active_plan)
     if (!progress.isComplete) {
       parts.push(
@@ -41,14 +41,16 @@ export function checkCompactionRecovery(
 **File**: \`${workState.active_plan}\`
 **Progress**: ${progress.completed}/${progress.total} tasks complete
 
-You were executing this plan. Read the plan file to find the next unchecked \`- [ ]\` task and continue execution.`,
+Read the plan file from disk as your first action. Its \`## Progress\` checkboxes are the sole source of task status; find the next unchecked \`- [ ]\` task and read its \`## TODOs\` details before continuing.
+For an older plan without \`## Progress\`, use its existing task checklist in place.
+Keep the checkbox unchecked until the tester returns [PASS], then mark it \`- [x]\`. On [FAIL], fix and re-test; report a blocker after 3 failed cycles.`,
       )
     }
   }
 
   // Check for active workflow
   const workflowInstance = loadActiveInstance(directory)
-  if (workflowInstance && workflowInstance.status === "running") {
+  if (workflowInstance && workflowInstance.status === "running" && workflowInstance.session_ids.includes(sessionId)) {
     parts.push(
       `## Active Workflow: ${workflowInstance.definition_name}
 

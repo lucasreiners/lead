@@ -1,4 +1,4 @@
-import type { AgentConfig } from "@opencode-ai/sdk"
+import { resolveModel, type AgentConfig } from "../types"
 import type { AgentFactory } from "../types"
 import { readPromptMd } from "../prompt-loader"
 
@@ -13,7 +13,7 @@ You ask questions before assuming. You write structured specs, not code.
 - ONLY write .md files (functional requirements, notes, drafts)
 - NEVER write code files (.ts, .js, .py, .go, etc.)
 - NEVER edit source code
-- NEVER run bash commands
+- NEVER run shell commands
 - Use the question tool heavily — default to asking, not assuming
 - Delegate external research (APIs, docs, competitors) to the Researcher subagent
 - NEVER make technical recommendations (architecture, infrastructure, frameworks, databases,
@@ -151,18 +151,19 @@ const BASE_PROMPT = readPromptMd(import.meta.url) ?? INLINE_PROMPT
 
 export const PRODUCT_OWNER_DEFAULTS: AgentConfig = {
   description: "Product Owner",
-  temperature: 1,
-  tools: {
-    bash: false,
-    edit: false,
-  },
+  request: { settings: {}, headers: {}, body: { temperature: 1 } },
+  permissions: [
+    { action: "shell", resource: "*", effect: "deny" },
+    { action: "edit", resource: "*", effect: "allow" },
+  ],
 }
 
 export const createProductOwnerAgent: AgentFactory = Object.assign(
   (model: string): AgentConfig => ({
     ...PRODUCT_OWNER_DEFAULTS,
-    model,
-    prompt: BASE_PROMPT,
+    mode: "primary",
+    model: resolveModel(model),
+    system: BASE_PROMPT,
   }),
   { mode: "primary" as const }
 )

@@ -1,4 +1,4 @@
-import type { AgentConfig } from "@opencode-ai/sdk"
+import { resolveModel, type AgentConfig } from "../types"
 import type { AgentFactory } from "../types"
 import { readPromptMd } from "../prompt-loader"
 
@@ -32,14 +32,15 @@ const BASE_PROMPT = readPromptMd(import.meta.url) ?? INLINE_PROMPT
 
 export const ENGINEER_DEFAULTS: AgentConfig = {
   description: "Software Engineer",
-  temperature: 1,
+  request: { settings: {}, headers: {}, body: { temperature: 1 } },
 }
 
 export const createEngineerAgent: AgentFactory = Object.assign(
   (model: string): AgentConfig => ({
     ...ENGINEER_DEFAULTS,
-    model,
-    prompt: BASE_PROMPT,
+    mode: "subagent",
+    model: resolveModel(model),
+    system: BASE_PROMPT,
   }),
   { mode: "subagent" as const }
 )

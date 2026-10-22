@@ -5,7 +5,7 @@ import { debug } from "../../shared/log"
 
 /**
  * Capture a `tool.execute.before` invocation for delegation/read metrics.
- * No-op for tools other than `task`, `read`, `grep`. Never throws.
+ * No-op for tools other than `subagent`, `read`, `grep`. Never throws.
  *
  * Collection is fully disabled unless `LEAD_METRICS` is set, so the default
  * path allocates nothing and retains no per-session state.
@@ -14,7 +14,7 @@ export function captureToolMetrics(params: { toolName: string; sessionId: string
   const { toolName, sessionId, args } = params
   try {
     if (!process.env[METRICS_ENV_VAR]) return
-    if (toolName === "task") {
+    if (toolName === "subagent") {
       recordDelegation(sessionId, args)
       return
     }
